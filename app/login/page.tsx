@@ -32,7 +32,7 @@ function LoginForm() {
             if (redirectTo) {
                 router.push(redirectTo);
             } else if (res.data.role === "admin") {
-                router.push("/admin/materials");
+                router.push("/admin/dashboard");
             } else {
                 router.push("/materials");
             }
