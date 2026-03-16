@@ -9,6 +9,27 @@ export default function DetailedReviewPage({ params }: { params: Promise<{ resul
     const { resultId } = use(params);
     const [resultData, setResultData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<any>(null);
+    useEffect(() => {
+        const getUserData = async () => {
+            try {
+                // 1. Check Authentication
+                const authRes = await axios.get("/api/auth/me");
+                const currentUser = authRes.data.user;
+                console.log(currentUser)
+
+                setUser(currentUser);
+
+
+            } catch (err) {
+                console.error("Test fetch failed");
+
+            } finally {
+                setLoading(false);
+            }
+        };
+        getUserData();
+    }, []);
 
     useEffect(() => {
         const fetchResult = async () => {
@@ -45,12 +66,21 @@ export default function DetailedReviewPage({ params }: { params: Promise<{ resul
                         {test.title}
                     </span>
                 </div>
-                <Link
-                    href={`/test-result/${resultId}`}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                >
-                    <ArrowLeft size={14} /> Back to Summary
-                </Link>
+                {user.role === "admin" && (
+                    <Link href="/admin/tests" className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                    >
+                        <ArrowLeft size={16} /> Return to Dashboard
+                    </Link>
+                )}
+                {user.role !== "admin" && (
+                    <Link
+                        href={`/test-result/${resultId}`}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                    >
+                        <ArrowLeft size={14} /> Back to Summary
+                    </Link>
+                )}
+
             </header>
 
             <div className="flex-1 overflow-y-auto p-6 md:p-12 relative">
