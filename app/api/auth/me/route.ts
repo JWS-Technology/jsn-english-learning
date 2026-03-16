@@ -25,7 +25,7 @@ export async function GET() {
     // 3. Fetch Fresh Data from MongoDB
     // We use .lean() for performance and .select("-password") for security
     const user = await User.findById(decoded.userId)
-      .select("name email role")
+      .select("name email role isPaidUser")
       .lean();
 
     if (!user) {
@@ -42,6 +42,7 @@ export async function GET() {
         name: user.name,
         email: user.email,
         role: user.role,
+        isPaidUser: user.isPaidUser,
       },
     });
   } catch (error) {
