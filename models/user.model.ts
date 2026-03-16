@@ -18,6 +18,7 @@ const UserSchema = new Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    isPaidUser: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
