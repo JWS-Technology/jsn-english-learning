@@ -5,8 +5,8 @@ import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { Loader2, ChevronLeft } from "lucide-react";
-import PDFPreview from "../../../components/PDFPreview";
-import OrderSidebar from "../../../components/OrderSidebar";
+import PDFPreview from "@/components/PDFPreview";
+import OrderSidebar from "@/components/OrderSidebar";
 
 export default function MaterialDetail() {
     const { id } = useParams();

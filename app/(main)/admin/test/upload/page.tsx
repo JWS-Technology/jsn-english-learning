@@ -1,0 +1,258 @@
+"use client";
+
+import { useState, useRef } from "react";
+import axios from "axios";
+import {
+    Upload,
+    FileText,
+    CheckCircle2,
+    AlertCircle,
+    Loader2,
+    X,
+    Type,
+    Book,
+    Clock,
+    ShieldCheck,
+    FileUp,
+    Zap
+} from "lucide-react";
+
+export default function AdminTestUploadPage() {
+    const [form, setForm] = useState({
+        title: "",
+        subject: "",
+        examType: "TRB",
+        durationInMinutes: "",
+        isPremium: true,
+    });
+
+    const [file, setFile] = useState<File | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setSuccess("");
+
+        if (!file) {
+            setError("Please select a Word document (.docx) to proceed.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const formData = new FormData();
+            formData.append("title", form.title);
+            formData.append("subject", form.subject);
+            formData.append("examType", form.examType);
+            formData.append("durationInMinutes", form.durationInMinutes);
+            formData.append("isPremium", form.isPremium.toString());
+            formData.append("file", file);
+
+            // API endpoint will handle uploading the file and parsing the .docx questions
+            await axios.post("/api/admin/tests/upload", formData);
+
+            setSuccess("Test deployed successfully to the CBT engine!");
+
+            // Reset form
+            setForm({ title: "", subject: "", examType: "TRB", durationInMinutes: "", isPremium: true });
+            setFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+
+        } catch (err: any) {
+            setError(err?.response?.data?.message || "Upload failed. Check server connection.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <main className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 py-20">
+            <div className="w-full max-w-2xl bg-white rounded-[3rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden">
+
+                {/* --- HEADER --- */}
+                <div className="bg-[#0F172A] px-10 py-12 text-white relative">
+                    <div className="relative z-10 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tight">CBT Registry</h1>
+                            <p className="text-slate-400 mt-2 font-medium">Provision new automated tests from Word templates.</p>
+                        </div>
+                        <ShieldCheck className="w-12 h-12 text-orange-500 opacity-80" />
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-10 space-y-7">
+
+                    {/* Title & Subject */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Test Title</label>
+                            <div className="relative">
+                                <Type className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    required
+                                    type="text"
+                                    value={form.title}
+                                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                    placeholder="e.g. Unit 1: Mock Test"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                            <div className="relative">
+                                <Book className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    required
+                                    type="text"
+                                    value={form.subject}
+                                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                                    placeholder="e.g. British Literature"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Exam Type & Settings Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2 col-span-1 md:col-span-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                            <div className="flex gap-2">
+                                {["TRB", "NET", "SET"].map((type) => (
+                                    <button
+                                        key={type}
+                                        type="button"
+                                        onClick={() => setForm({ ...form, examType: type })}
+                                        className={`flex-1 py-3.5 rounded-xl font-black text-[10px] tracking-widest transition-all border ${form.examType === type
+                                            ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-lg'
+                                            : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
+                                            }`}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="space-y-2 col-span-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration (Mins)</label>
+                            <div className="relative">
+                                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                                <input
+                                    required
+                                    type="number"
+                                    value={form.durationInMinutes}
+                                    onChange={(e) => setForm({ ...form, durationInMinutes: e.target.value })}
+                                    placeholder="e.g. 60"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Premium Toggle */}
+                    <div className="flex items-center justify-between p-5 bg-orange-50/50 border border-orange-100 rounded-2xl">
+                        <div>
+                            <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-orange-500" /> Premium Test Gate
+                            </p>
+                            <p className="text-[10px] text-slate-500 font-bold mt-1">Require users to have "isPaidUser" status to access.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={form.isPremium}
+                                onChange={(e) => setForm({ ...form, isPremium: e.target.checked })}
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                        </label>
+                    </div>
+
+                    {/* File Upload Container */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Test Template (Word .docx)</label>
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`group border-2 border-dashed rounded-[2.5rem] p-10 transition-all cursor-pointer flex flex-col items-center justify-center
+                                ${file ? 'border-blue-200 bg-blue-50/20' : 'border-slate-100 hover:border-blue-500 hover:bg-blue-50/10'}`}
+                        >
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                            />
+
+                            {file ? (
+                                <div className="flex items-center gap-4 animate-in fade-in zoom-in-95">
+                                    <div className="bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-200">
+                                        <FileText className="text-white w-7 h-7" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-black text-[#0F172A] truncate max-w-[240px]">{file.name}</p>
+                                        <p className="text-[10px] font-black text-blue-600 mt-1">{(file.size / 1024).toFixed(2)} KB</p>
+                                    </div>
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                                        className="ml-4 p-2 hover:bg-blue-100 rounded-full transition-colors">
+                                        <X className="w-5 h-5 text-blue-700" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="bg-slate-50 p-4 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-500 shadow-sm">
+                                        <FileUp className="w-7 h-7 text-slate-400" />
+                                    </div>
+                                    <p className="text-sm font-black text-[#0F172A]">Drop QUIZ Template here</p>
+                                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest text-center">
+                                        Ensure format matches: Question, Answers, Grade (100 = Correct)
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Messages */}
+                    <AnimateMessages error={error} success={success} />
+
+                    {/* Action Button */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-[#0F172A] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-black shadow-xl shadow-blue-950/20 transition-all active:scale-[0.98] disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <span className="flex items-center justify-center gap-3">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Parsing Document & Deploying...
+                            </span>
+                        ) : (
+                            "Deploy Test to System"
+                        )}
+                    </button>
+                </form>
+            </div>
+        </main>
+    );
+}
+
+function AnimateMessages({ error, success }: { error: string, success: string }) {
+    if (error) return (
+        <div className="flex items-center gap-3 bg-red-50 text-red-700 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-100 animate-in slide-in-from-bottom-2">
+            <AlertCircle className="w-5 h-5 shrink-0" /> {error}
+        </div>
+    );
+    if (success) return (
+        <div className="flex items-center gap-3 bg-emerald-50 text-emerald-700 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 animate-in slide-in-from-bottom-2">
+            <CheckCircle2 className="w-5 h-5 shrink-0" /> {success}
+        </div>
+    );
+    return null;
+}

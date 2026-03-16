@@ -59,15 +59,15 @@ function LoginForm() {
 
             {/* Email Input */}
             <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest ml-1">Email Address</label>
                 <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-800" />
                     <input
                         required
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-slate-50 border text-slate-400 border-slate-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all"
+                        className="w-full bg-slate-50 border text-slate-800 border-slate-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all"
                         placeholder="name@example.com"
                     />
                 </div>
@@ -75,15 +75,15 @@ function LoginForm() {
 
             {/* Password Input */}
             <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                <label className="text-[10px] font-black text-slate-800 uppercase tracking-widest ml-1">Password</label>
                 <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-800" />
                     <input
                         required
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-slate-50 border text-slate-400 border-slate-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all"
+                        className="w-full bg-slate-50 border text-slate-800 border-slate-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 focus:bg-white outline-none transition-all"
                         placeholder="••••••••"
                     />
                 </div>

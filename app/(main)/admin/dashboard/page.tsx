@@ -48,7 +48,14 @@ export default function AdminDashboard() {
                         </div>
                         <h1 className="text-4xl font-black text-[#0F172A] tracking-tighter">System Overview</h1>
                     </div>
+
                     <div className="flex gap-3">
+                        <Link href="/admin/users" className="bg-orange-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-900/20 hover:bg-orange-600 transition-all active:scale-95">
+                            Users
+                        </Link>
+                        <Link href="/admin/test/upload" className="bg-orange-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-900/20 hover:bg-orange-600 transition-all active:scale-95">
+                            New Test
+                        </Link>
                         <Link href="/admin/materials/upload" className="bg-orange-500 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-orange-900/20 hover:bg-orange-600 transition-all active:scale-95">
                             New Material
                         </Link>
