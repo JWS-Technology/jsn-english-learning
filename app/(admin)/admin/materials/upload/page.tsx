@@ -12,9 +12,11 @@ import {
     Type,
     Book,
     AlignLeft,
-    IndianRupee, // Added for Price icon
-    ShieldCheck
+    IndianRupee,
+    ShieldCheck,
+    ArrowLeft
 } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminMaterialUploadPage() {
     const [form, setForm] = useState({
@@ -51,16 +53,14 @@ export default function AdminMaterialUploadPage() {
             formData.append("subject", form.subject);
             formData.append("examType", form.examType);
             formData.append("description", form.description);
-            formData.append("price", form.price); // ✅ NEW: Price appended
+            formData.append("price", form.price);
             formData.append("totalPages", form.totalPages);
             formData.append("file", file);
 
-            // API endpoint handles S3 upload and DB entry
             await axios.post("/api/materials", formData);
 
             setSuccess("Material published successfully to the student portal!");
 
-            // Reset form
             setForm({ title: "", subject: "", examType: "TRB", description: "", price: "", totalPages: "" });
             setFile(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -73,17 +73,23 @@ export default function AdminMaterialUploadPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 py-20">
-            <div className="w-full max-w-2xl bg-white rounded-[3rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden">
+        <div className="p-8 md:p-12 max-w-3xl mx-auto">
+            <div className="w-full bg-white rounded-[3rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
 
                 {/* --- HEADER --- */}
                 <div className="bg-[#0F172A] px-10 py-12 text-white relative">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+
+                    <Link href="/admin/materials" className="relative z-10 inline-flex items-center gap-2 text-slate-400 hover:text-white text-xs font-black uppercase tracking-widest mb-6 transition-colors">
+                        <ArrowLeft size={14} /> Back to Library
+                    </Link>
+
                     <div className="relative z-10 flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-black tracking-tight">Library Registry</h1>
                             <p className="text-slate-400 mt-2 font-medium">Provision new TRB/NET/SET academic materials.</p>
                         </div>
-                        <ShieldCheck className="w-12 h-12 text-orange-500 opacity-80" />
+                        <ShieldCheck className="w-12 h-12 text-blue-500 opacity-80" />
                     </div>
                 </div>
 
@@ -101,7 +107,7 @@ export default function AdminMaterialUploadPage() {
                                     value={form.title}
                                     onChange={(e) => setForm({ ...form, title: e.target.value })}
                                     placeholder="e.g. Unit 1: Chaucer"
-                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A]"
                                 />
                             </div>
                         </div>
@@ -115,13 +121,13 @@ export default function AdminMaterialUploadPage() {
                                     value={form.subject}
                                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
                                     placeholder="e.g. British Literature"
-                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A]"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* ✅ NEW: Exam Type & Price Grid */}
+                    {/* Exam Type & Price Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
@@ -144,28 +150,28 @@ export default function AdminMaterialUploadPage() {
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Price (Rupees)</label>
                             <div className="relative">
-                                <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                                <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-600" />
                                 <input
                                     required
                                     type="number"
                                     value={form.price}
                                     onChange={(e) => setForm({ ...form, price: e.target.value })}
                                     placeholder="e.g. 499"
-                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A]"
                                 />
                             </div>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 md:col-span-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Pages</label>
                             <div className="relative">
-                                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-600" />
                                 <input
                                     required
                                     type="number"
                                     value={form.totalPages}
                                     onChange={(e) => setForm({ ...form, totalPages: e.target.value })}
                                     placeholder="e.g. 120"
-                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:border-orange-500 outline-none font-bold text-[#0F172A]"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A]"
                                 />
                             </div>
                         </div>
@@ -181,7 +187,7 @@ export default function AdminMaterialUploadPage() {
                                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                                 placeholder="Details about this courier-delivered package..."
                                 rows={3}
-                                className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A] resize-none"
+                                className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A] resize-none"
                             />
                         </div>
                     </div>
@@ -192,29 +198,29 @@ export default function AdminMaterialUploadPage() {
                         <div
                             onClick={() => fileInputRef.current?.click()}
                             className={`group border-2 border-dashed rounded-[2.5rem] p-10 transition-all cursor-pointer flex flex-col items-center justify-center
-                                ${file ? 'border-orange-200 bg-orange-50/20' : 'border-slate-100 hover:border-orange-500 hover:bg-orange-50/10'}`}
+                                ${file ? 'border-blue-200 bg-blue-50/20' : 'border-slate-100 hover:border-blue-500 hover:bg-blue-50/10'}`}
                         >
                             <input type="file" ref={fileInputRef} className="hidden" accept="application/pdf"
                                 onChange={(e) => setFile(e.target.files?.[0] || null)} />
 
                             {file ? (
                                 <div className="flex items-center gap-4 animate-in fade-in zoom-in-95">
-                                    <div className="bg-orange-500 p-3 rounded-2xl shadow-xl shadow-orange-200">
+                                    <div className="bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-200">
                                         <FileText className="text-white w-7 h-7" />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-sm font-black text-[#0F172A] truncate max-w-[240px]">{file.name}</p>
-                                        <p className="text-[10px] font-black text-orange-600 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                        <p className="text-[10px] font-black text-blue-600 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                                     </div>
                                     <button type="button" onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                                        className="ml-4 p-2 hover:bg-orange-100 rounded-full transition-colors">
-                                        <X className="w-5 h-5 text-orange-700" />
+                                        className="ml-4 p-2 hover:bg-blue-100 rounded-full transition-colors">
+                                        <X className="w-5 h-5 text-blue-700" />
                                     </button>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="bg-slate-50 p-4 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-500 shadow-sm">
-                                        <Upload className="w-7 h-7 text-slate-400" />
+                                    <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl mb-4 group-hover:scale-110 group-hover:bg-white transition-all duration-500 shadow-sm">
+                                        <Upload className="w-7 h-7 text-blue-500" />
                                     </div>
                                     <p className="text-sm font-black text-[#0F172A]">Drop study sample here</p>
                                     <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">PDF format only</p>
@@ -230,7 +236,7 @@ export default function AdminMaterialUploadPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-orange-500 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-orange-600 shadow-xl shadow-orange-950/20 transition-all active:scale-[0.98] disabled:opacity-50"
+                        className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all active:scale-[0.98] disabled:opacity-50 flex justify-center"
                     >
                         {loading ? (
                             <span className="flex items-center justify-center gap-3">
@@ -243,7 +249,7 @@ export default function AdminMaterialUploadPage() {
                     </button>
                 </form>
             </div>
-        </main>
+        </div>
     );
 }
 

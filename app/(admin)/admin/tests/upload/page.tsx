@@ -14,14 +14,16 @@ import {
     Clock,
     ShieldCheck,
     FileUp,
-    Zap
+    Zap,
+    ArrowLeft
 } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminTestUploadPage() {
     const [form, setForm] = useState({
         title: "",
         subject: "",
-        examType: "TRB",
+        examType: "UG TRB",
         durationInMinutes: "",
         isPremium: true,
     });
@@ -72,17 +74,19 @@ export default function AdminTestUploadPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 py-20">
-            <div className="w-full max-w-2xl bg-white rounded-[3rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-gray-100 overflow-hidden">
+        <div className="p-5 md:p-6 max-w-3xl mx-auto">
+
+            <div className="w-full bg-white rounded-[3rem] shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
 
                 {/* --- HEADER --- */}
-                <div className="bg-[#0F172A] px-10 py-12 text-white relative">
+                <div className="bg-[#0F172A] px-8 py-12 text-white relative">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
                     <div className="relative z-10 flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-black tracking-tight">CBT Registry</h1>
-                            <p className="text-slate-400 mt-2 font-medium">Provision new automated tests from Word templates.</p>
+                            {/* <p className="text-slate-400 mt-2 font-medium">Provision new automated tests from Word templates.</p> */}
                         </div>
-                        <ShieldCheck className="w-12 h-12 text-orange-500 opacity-80" />
+                        <ShieldCheck className="w-12 h-12 text-blue-500 opacity-80" />
                     </div>
                 </div>
 
@@ -100,12 +104,12 @@ export default function AdminTestUploadPage() {
                                     value={form.title}
                                     onChange={(e) => setForm({ ...form, title: e.target.value })}
                                     placeholder="e.g. Unit 1: Mock Test"
-                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A]"
                                 />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Unit</label>
                             <div className="relative">
                                 <Book className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                 <input
@@ -113,8 +117,8 @@ export default function AdminTestUploadPage() {
                                     type="text"
                                     value={form.subject}
                                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                                    placeholder="e.g. British Literature"
-                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                    placeholder="e.g. Unit I"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A]"
                                 />
                             </div>
                         </div>
@@ -125,7 +129,7 @@ export default function AdminTestUploadPage() {
                         <div className="space-y-2 col-span-1 md:col-span-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
                             <div className="flex gap-2">
-                                {["TRB", "NET", "SET"].map((type) => (
+                                {["UG TRB", "PG TRB", "NET", "SET"].map((type) => (
                                     <button
                                         key={type}
                                         type="button"
@@ -143,24 +147,24 @@ export default function AdminTestUploadPage() {
                         <div className="space-y-2 col-span-1">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration (Mins)</label>
                             <div className="relative">
-                                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-600" />
                                 <input
                                     required
                                     type="number"
                                     value={form.durationInMinutes}
                                     onChange={(e) => setForm({ ...form, durationInMinutes: e.target.value })}
                                     placeholder="e.g. 60"
-                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 outline-none transition-all font-bold text-[#0F172A]"
+                                    className="w-full border border-slate-100 bg-slate-50/50 rounded-2xl pl-11 pr-4 py-4 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-[#0F172A]"
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* Premium Toggle */}
-                    <div className="flex items-center justify-between p-5 bg-orange-50/50 border border-orange-100 rounded-2xl">
+                    <div className="flex items-center justify-between p-5 bg-blue-50/50 border border-blue-100 rounded-2xl">
                         <div>
                             <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest flex items-center gap-2">
-                                <Zap className="w-4 h-4 text-orange-500" /> Premium Test Gate
+                                <Zap className="w-4 h-4 text-blue-600" /> Premium Test Gate
                             </p>
                             <p className="text-[10px] text-slate-500 font-bold mt-1">Require users to have "isPaidUser" status to access.</p>
                         </div>
@@ -171,7 +175,7 @@ export default function AdminTestUploadPage() {
                                 checked={form.isPremium}
                                 onChange={(e) => setForm({ ...form, isPremium: e.target.checked })}
                             />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
 
@@ -181,7 +185,7 @@ export default function AdminTestUploadPage() {
                         <div
                             onClick={() => fileInputRef.current?.click()}
                             className={`group border-2 border-dashed rounded-[2.5rem] p-10 transition-all cursor-pointer flex flex-col items-center justify-center
-                                ${file ? 'border-blue-200 bg-blue-50/20' : 'border-slate-100 hover:border-blue-500 hover:bg-blue-50/10'}`}
+                                ${file ? 'border-blue-200 bg-blue-50/20' : 'border-slate-200 hover:border-blue-500 hover:bg-blue-50/30'}`}
                         >
                             <input
                                 type="file"
@@ -207,8 +211,8 @@ export default function AdminTestUploadPage() {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="bg-slate-50 p-4 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-500 shadow-sm">
-                                        <FileUp className="w-7 h-7 text-slate-400" />
+                                    <div className="bg-slate-50 p-4 rounded-2xl mb-4 group-hover:scale-110 group-hover:bg-white transition-all duration-500 shadow-sm border border-slate-100">
+                                        <FileUp className="w-7 h-7 text-blue-500" />
                                     </div>
                                     <p className="text-sm font-black text-[#0F172A]">Drop QUIZ Template here</p>
                                     <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest text-center">
@@ -226,7 +230,7 @@ export default function AdminTestUploadPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-[#0F172A] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-black shadow-xl shadow-blue-950/20 transition-all active:scale-[0.98] disabled:opacity-50"
+                        className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all active:scale-[0.98] disabled:opacity-50"
                     >
                         {loading ? (
                             <span className="flex items-center justify-center gap-3">
@@ -234,12 +238,12 @@ export default function AdminTestUploadPage() {
                                 Parsing Document & Deploying...
                             </span>
                         ) : (
-                            "Deploy Test to System"
+                            "Upload Test"
                         )}
                     </button>
                 </form>
             </div>
-        </main>
+        </div>
     );
 }
 
