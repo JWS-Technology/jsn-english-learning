@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/config/dbConnect";
 import Material from "@/models/material.model";
 import Order from "@/models/order.model";
+import User from "@/models/user.model"; // ✅ NEW: Import User model
+import Test from "@/models/test.model"; // ✅ NEW: Import Test model
 import { verifyToken } from "@/config/auth";
 import { cookies } from "next/headers";
 
@@ -25,6 +27,8 @@ export async function GET() {
       pendingOrders,
       revenueData,
       recentOrders,
+      totalUsers, // ✅ NEW: Added to destructuring
+      totalTests, // ✅ NEW: Added to destructuring
     ] = await Promise.all([
       Material.countDocuments({ isActive: true }),
       Order.countDocuments(),
@@ -40,6 +44,12 @@ export async function GET() {
         .limit(5)
         .populate("material", "title subject") // Join with Material data
         .lean(),
+
+      // ✅ NEW: Count only standard users (students), excluding admins
+      User.countDocuments({ role: "user" }),
+
+      // ✅ NEW: Count all uploaded tests
+      Test.countDocuments(),
     ]);
 
     return NextResponse.json({
@@ -49,6 +59,8 @@ export async function GET() {
         totalOrders,
         pendingOrders,
         totalRevenue: revenueData[0]?.total || 0,
+        totalUsers, // ✅ NEW: Sent to frontend
+        totalTests, // ✅ NEW: Sent to frontend
       },
       recentOrders,
     });
