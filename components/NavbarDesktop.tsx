@@ -117,7 +117,7 @@ const NavbarDesktop: React.FC<NavbarDesktopProps> = ({ links, user, handleLogout
                         href="/login"
                         className="bg-orange-500 text-white px-8 py-2.5 rounded-full text-sm font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg shadow-orange-900/20 active:scale-95"
                     >
-                        Get Started
+                        Login
                     </Link>
                 )}
             </div>
