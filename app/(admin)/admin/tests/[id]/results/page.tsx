@@ -27,7 +27,7 @@ export default function TestResultsLeaderboard({ params }: { params: Promise<{ i
         fetchResults();
     }, [id]);
 
-    // ✅ Professional Transcript Export (First Attempt Only)
+    // ✅ Professional Transcript Export (Ranked by Score)
     const exportToPDF = () => {
         if (!data || !data.test || !data.results) return;
 
@@ -78,23 +78,26 @@ export default function TestResultsLeaderboard({ params }: { params: Promise<{ i
         doc.text(`Subject Domain: ${test.subject}`, 14, 48);
         doc.text(`Evaluation Category: ${test.examType}`, 14, 54);
 
-        doc.text(`Total Items: ${test.totalQuestions}`, pageWidth - 14, 48, { align: "right" });
+        doc.text(`Total Questions: ${test.totalQuestions}`, pageWidth - 14, 48, { align: "right" });
         doc.text(`Candidates Evaluated: ${uniqueResults.length}`, pageWidth - 14, 54, { align: "right" });
         doc.text(`Date of Generation: ${new Date().toLocaleDateString()}`, pageWidth - 14, 60, { align: "right" });
 
-        // --- 4. PREPARE TABLE DATA ---
-        const tableColumn = ["S.No", "Candidate Name", "Registered Email", "Assessment Date", "Score Obtained"];
+        // --- 4. PREPARE TABLE DATA (Ranked Roster) ---
+        const tableColumn = ["Rank", "Candidate Name", "Registered Email", "Assessment Date", "Score Obtained"];
         const tableRows: any[] = [];
 
+        // ✅ FIX: Sort by Score (Descending) to establish Rank
         const sortedUniqueResults = uniqueResults.sort((a, b) => {
-            const nameA = a.user?.name || "Unknown";
-            const nameB = b.user?.name || "Unknown";
-            return nameA.localeCompare(nameB);
+            if (b.score !== a.score) {
+                return b.score - a.score; // Highest score first
+            }
+            // Tie-breaker: If scores are equal, the earliest submission ranks higher
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
 
         sortedUniqueResults.forEach((result: any, index: number) => {
             const rowData = [
-                (index + 1).toString(),
+                (index + 1).toString(), // Rank
                 result.user?.name || "Deleted User",
                 result.user?.email || "N/A",
                 new Date(result.createdAt).toLocaleDateString(),
@@ -118,7 +121,6 @@ export default function TestResultsLeaderboard({ params }: { params: Promise<{ i
                 4: { halign: 'center', fontStyle: 'bold' }
             },
             didDrawPage: function (data) {
-                // ✅ TS FIX: Cast doc to 'any' to bypass strict internal typing
                 const str = "Page " + (doc as any).internal.getNumberOfPages();
                 doc.setFontSize(8);
                 doc.setTextColor(150);
