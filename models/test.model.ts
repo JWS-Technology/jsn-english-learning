@@ -14,7 +14,7 @@ const TestSchema = new Schema(
     description: { type: String },
     examType: {
       type: String,
-      enum: ["TRB", "NET", "SET"],
+      enum: ["UG TRB", "PG TRB", "NET", "SET"],
       required: true,
     },
     subject: { type: String, required: true },

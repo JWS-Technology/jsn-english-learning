@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import { connectDB } from "@/config/dbConnect";
 import Test from "@/models/test.model";
-import TestResult from "@/models/testResult.model";
+import mongoose from "mongoose";
 
-const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
-  await mongoose.connect(process.env.MONGODB_URI as string);
-};
-
-export async function DELETE(
+export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -17,25 +12,38 @@ export async function DELETE(
     const { id } = await params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ message: "Invalid Test ID" }, { status: 400 });
+      return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
     }
 
-    // 1. Delete the actual test
-    const deletedTest = await Test.findByIdAndDelete(id);
+    // Fetch the full test including the questions AND the correct answers
+    // (We do not use .select('-questions.correctAnswer') here like in the public route)
+    const test = await Test.findById(id);
 
-    if (!deletedTest) {
+    if (!test) {
       return NextResponse.json({ message: "Test not found" }, { status: 404 });
     }
 
-    // 2. Delete all results associated with this test to keep the DB clean
-    await TestResult.deleteMany({ test: id });
-
+    return NextResponse.json(test, { status: 200 });
+  } catch (error) {
+    console.error("Admin Fetch Test Error:", error);
     return NextResponse.json(
-      { message: "Test and associated results deleted successfully" },
-      { status: 200 },
+      { message: "Failed to fetch test" },
+      { status: 500 },
     );
-  } catch (error: any) {
-    console.error("Failed to delete test:", error);
+  }
+}
+
+// Keep your existing DELETE function here if you have one!
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    await connectDB();
+    const { id } = await params;
+    await Test.findByIdAndDelete(id);
+    return NextResponse.json({ message: "Deleted successfully" });
+  } catch (error) {
     return NextResponse.json(
       { message: "Failed to delete test" },
       { status: 500 },

@@ -15,9 +15,14 @@ import {
     ShieldCheck,
     FileUp,
     Zap,
-    ArrowLeft
+    Download
 } from "lucide-react";
-import Link from "next/link";
+// ✅ IMPORT THE DOCX LIBRARIES
+import {
+    Document, Packer, Paragraph, TextRun, HeadingLevel,
+    Table, TableRow, TableCell, WidthType
+} from "docx";
+import { saveAs } from "file-saver";
 
 export default function AdminTestUploadPage() {
     const [form, setForm] = useState({
@@ -34,6 +39,92 @@ export default function AdminTestUploadPage() {
     const [success, setSuccess] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // ✅ FIX: Generates Word Tables exactly formatted for the backend parser
+    const generateAndDownloadTemplate = async () => {
+
+        // Helper function to create a standardized question table
+        const createQuestionTable = (questionText: string, options: { text: string, grade: string }[]) => {
+            return new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                rows: [
+                    // Row 0: The Question
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph({ text: questionText, style: "Strong" })],
+                                columnSpan: 3,
+                            }),
+                        ],
+                    }),
+                    // Row 1: The Header Row (Required by backend regex)
+                    new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph({ text: "ID", style: "Strong" })] }),
+                            new TableCell({ children: [new Paragraph({ text: "Answers", style: "Strong" })] }),
+                            new TableCell({ children: [new Paragraph({ text: "Grade", style: "Strong" })] }),
+                        ],
+                    }),
+                    // Rows 2+: The Options
+                    ...options.map(opt => new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph("")] }), // Empty ID column
+                            new TableCell({ children: [new Paragraph(opt.text)] }), // The answer text
+                            new TableCell({ children: [new Paragraph(opt.grade)] }), // The grade (100 = correct)
+                        ],
+                    }))
+                ]
+            });
+        };
+
+        const doc = new Document({
+            sections: [
+                {
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            text: "JSN English Learning - Standard CBT Upload Template",
+                            heading: HeadingLevel.HEADING_2,
+                            spacing: { after: 200 },
+                        }),
+                        new Paragraph({
+                            text: "Instructions: Copy the tables below for each question. Place the question text in the top row. Put your answers in the 'Answers' column. Type '100' in the 'Grade' column next to the correct answer. Keep other grades blank or '0'.",
+                            spacing: { after: 400 },
+                        }),
+
+                        // --- Table 1 ---
+                        createQuestionTable("Who is the author of the poem 'Kubla Khan'?", [
+                            { text: "A) William Wordsworth", grade: "0" },
+                            { text: "B) Samuel Taylor Coleridge", grade: "100" },
+                            { text: "C) John Keats", grade: "0" },
+                            { text: "D) Lord Byron", grade: "0" },
+                        ]),
+                        new Paragraph({ text: "", spacing: { after: 400 } }), // Blank spacing between tables
+
+                        // --- Table 2 ---
+                        createQuestionTable("In which year was the Lyrical Ballads published?", [
+                            { text: "A) 1798", grade: "100" },
+                            { text: "B) 1800", grade: "0" },
+                            { text: "C) 1789", grade: "0" },
+                            { text: "D) 1802", grade: "0" },
+                        ]),
+                        new Paragraph({ text: "", spacing: { after: 400 } }),
+
+                        // --- Table 3 ---
+                        createQuestionTable("Which of the following is an element of a Shakespearean sonnet?", [
+                            { text: "A) ABBA ABBA CDE CDE rhyme scheme", grade: "0" },
+                            { text: "B) Written in dactylic hexameter", grade: "0" },
+                            { text: "C) Ends with a rhyming couplet", grade: "100" },
+                            { text: "D) Contains exactly 12 lines", grade: "0" },
+                        ]),
+                    ],
+                },
+            ],
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, "JSN_Test_Template.docx");
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,13 +147,11 @@ export default function AdminTestUploadPage() {
             formData.append("isPremium", form.isPremium.toString());
             formData.append("file", file);
 
-            // API endpoint will handle uploading the file and parsing the .docx questions
             await axios.post("/api/admin/tests/upload", formData);
 
             setSuccess("Test deployed successfully to the CBT engine!");
 
-            // Reset form
-            setForm({ title: "", subject: "", examType: "TRB", durationInMinutes: "", isPremium: true });
+            setForm({ title: "", subject: "", examType: "UG TRB", durationInMinutes: "", isPremium: true });
             setFile(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
 
@@ -84,7 +173,6 @@ export default function AdminTestUploadPage() {
                     <div className="relative z-10 flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-black tracking-tight">CBT Registry</h1>
-                            {/* <p className="text-slate-400 mt-2 font-medium">Provision new automated tests from Word templates.</p> */}
                         </div>
                         <ShieldCheck className="w-12 h-12 text-blue-500 opacity-80" />
                     </div>
@@ -179,9 +267,19 @@ export default function AdminTestUploadPage() {
                         </label>
                     </div>
 
-                    {/* File Upload Container */}
+                    {/* File Upload Container with GENERATE Template Button */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Upload Test Template (Word .docx)</label>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 ml-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Test Template (Word .docx)</label>
+                            <button
+                                type="button"
+                                onClick={generateAndDownloadTemplate}
+                                className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg cursor-pointer"
+                            >
+                                <Download size={14} /> Generate & Download Template
+                            </button>
+                        </div>
+
                         <div
                             onClick={() => fileInputRef.current?.click()}
                             className={`group border-2 border-dashed rounded-[2.5rem] p-10 transition-all cursor-pointer flex flex-col items-center justify-center

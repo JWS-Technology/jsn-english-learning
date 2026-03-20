@@ -13,8 +13,11 @@ import {
     Lock,
     PlayCircle,
     CheckCircle2,
-    MonitorPlay
+    MonitorPlay,
+    Download
 } from "lucide-react";
+
+import jsPDF from "jspdf";
 
 type Test = {
     _id: string;
@@ -32,22 +35,21 @@ export default function TestsListingPage() {
     const [user, setUser] = useState<any>(null);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("ALL");
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Fetch Tests 
-                const res = await axios.get("/api/tests"); // Ensure you have a simple GET route for tests
+                const res = await axios.get("/api/tests");
                 setTests(res.data || []);
 
-                // 2. Verify Session
                 try {
                     const authRes = await axios.get("/api/auth/me");
                     if (authRes.data.success) {
                         setUser(authRes.data.user);
                     }
                 } catch (authErr) {
-                    setUser(null); // Not logged in
+                    setUser(null);
                 }
             } catch (err) {
                 console.error("Critical Fetch Error:", err);
@@ -64,6 +66,137 @@ export default function TestsListingPage() {
         const matchesFilter = filter === "ALL" || t.examType === filter;
         return matchesSearch && matchesFilter;
     });
+
+    // ✅ UPDATED: PDF Generator with True Center Watermark & Bolder Answers
+    const downloadAnswerKeyPDF = async (e: React.MouseEvent, testId: string, title: string, examType: string, subject: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            setDownloadingId(testId);
+
+            const res = await axios.get(`/api/admin/tests/${testId}`);
+            const fullTest = res.data;
+            // console.log("Test", fullTest)
+            if (!fullTest.questions || fullTest.questions.length === 0) {
+                alert("No questions found for this test.");
+                setDownloadingId(null);
+                return;
+            }
+
+            const doc = new jsPDF();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            let yPos = 40;
+
+            const drawPageBackground = (isFirstPage: boolean) => {
+                // 1. Page Border
+                doc.setDrawColor(15, 23, 42);
+                doc.setLineWidth(0.5);
+                doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+
+                // 2. TRUE Center Diagonal Watermark
+                doc.saveGraphicsState();
+                // TS Fix: cast doc to any for advanced GState usage
+                (doc as any).setGState(new (doc as any).GState({ opacity: 0.08 }));
+                doc.setTextColor(15, 23, 42);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(55);
+                // perfectly center X and Y, align center, baseline middle
+                doc.text("JSN ENGLISH LEARNING", pageWidth / 2, pageHeight / 2, {
+                    angle: 45,
+                    align: "center",
+                    baseline: "middle"
+                });
+
+                doc.restoreGraphicsState(); // Restore opacity to normal for text
+
+                // 3. Footer
+                doc.setTextColor(100, 116, 139);
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.text("Dr. S. Jerald Sagaya Nathan - 9843287913", 15, pageHeight - 15);
+                // doc.text("Dr. S. Jerald Sagaya Nathan", pageWidth / 2, pageHeight - 15, { align: "center" });
+                doc.text(`Page ${(doc as any).internal.getNumberOfPages()}`, pageWidth - 15, pageHeight - 15, { align: "right" });
+
+                // 4. Header
+                if (isFirstPage) {
+                    doc.setTextColor(15, 23, 42);
+                    doc.setFontSize(14);
+                    doc.text(`${examType.toUpperCase()} ENGLISH`, pageWidth / 2, 22, { align: "center" });
+                    doc.setFontSize(11);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`${subject} - ${title}`, pageWidth / 2, 28, { align: "center" });
+
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(15, 32, pageWidth - 15, 32);
+                }
+            };
+
+            // Initialize first page
+            drawPageBackground(true);
+
+            // --- RENDER QUESTIONS ---
+            fullTest.questions.forEach((q: any, index: number) => {
+
+                if (yPos > pageHeight - 40) {
+                    doc.addPage();
+                    drawPageBackground(false);
+                    yPos = 25;
+                }
+
+                // Question Text (Black & Bold)
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(15, 23, 42);
+                doc.setFontSize(11);
+                const qText = `${index + 1}. ${q.questionText}`;
+                const qLines = doc.splitTextToSize(qText, pageWidth - 30);
+                doc.text(qLines, 15, yPos);
+                yPos += (qLines.length * 6) + 2;
+
+                // Answer Options
+                q.options.forEach((opt: string, optIndex: number) => {
+                    if (yPos > pageHeight - 30) {
+                        doc.addPage();
+                        drawPageBackground(false);
+                        yPos = 25;
+                    }
+
+                    const isCorrect = q.correctAnswer === optIndex;
+                    const letter = String.fromCharCode(65 + optIndex); // A, B, C, D
+
+                    // ✅ All answers are now bolded
+                    doc.setFont("helvetica", "bold");
+
+                    if (isCorrect) {
+                        doc.setTextColor(22, 163, 74); // Emerald Green for correct answer
+                    } else {
+                        doc.setTextColor(71, 85, 105); // Slate/Dark Gray for other answers
+                    }
+
+                    // Format: "A) William Wordsworth"
+                    const baseOptText = opt.startsWith(`${letter})`) ? opt : `${letter}) ${opt}`;
+                    const optText = isCorrect ? `${baseOptText}` : baseOptText;
+
+                    const optLines = doc.splitTextToSize(optText, pageWidth - 35);
+                    doc.text(optLines, 20, yPos);
+
+                    yPos += (optLines.length * 5) + 2;
+                });
+
+                yPos += 6; // Extra space between full questions
+            });
+
+            // Trigger Download
+            doc.save(`${title.replace(/\s+/g, '_')}_Answer_Key.pdf`);
+
+        } catch (error) {
+            console.error("Download Error:", error);
+            alert("Failed to download answer key.");
+        } finally {
+            setDownloadingId(null);
+        }
+    };
 
     return (
         <main className="min-h-screen bg-[#F8FAFC]">
@@ -121,7 +254,7 @@ export default function TestsListingPage() {
                     </div>
 
                     <div className="flex bg-slate-50 p-2 rounded-3xl items-center gap-1 border border-slate-100">
-                        {["ALL", "TRB", "NET", "SET"].map((type) => (
+                        {["ALL", "UG TRB", "PG TRB", "NET", "SET"].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => setFilter(type)}
@@ -155,12 +288,25 @@ export default function TestsListingPage() {
                                     transition={{ delay: index * 0.05 }}
                                     layout
                                 >
-                                    {/* ✅ ROUTE TO THE DISTRACTION-FREE (test) FOLDER */}
                                     <Link
                                         href={user ? `/take-test/${item._id}` : `/login?redirect=/take-test/${item._id}`}
                                         className="group bg-white border border-slate-100 rounded-[2.5rem] p-8 transition-all hover:border-blue-200 hover:shadow-2xl flex flex-col h-full relative overflow-hidden"
                                     >
-                                        <div className="mb-8 flex items-center justify-between relative z-10">
+
+                                        {/* ✅ PDF Download Button */}
+                                        <button
+                                            onClick={(e) => downloadAnswerKeyPDF(e, item._id, item.title, item.examType, item.subject)}
+                                            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-400 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm z-20"
+                                            title="Download PDF Answer Key"
+                                        >
+                                            {downloadingId === item._id ? (
+                                                <Loader2 size={16} className="animate-spin" />
+                                            ) : (
+                                                <Download size={16} />
+                                            )}
+                                        </button>
+
+                                        <div className="mb-8 flex items-center justify-between relative z-10 pr-12">
                                             <div className="w-14 h-14 bg-slate-50 text-slate-900 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
                                                 {user ? <PlayCircle className="w-7 h-7" /> : <Lock className="w-6 h-6" />}
                                             </div>
