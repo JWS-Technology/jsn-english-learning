@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldAlert, ChevronRight, ChevronLeft, CheckCircle2, Clock, Grid3X3, Lock } from "lucide-react";
@@ -22,7 +22,7 @@ export default function ActiveTestPage({ params }: { params: Promise<{ id: strin
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [authError, setAuthError] = useState(false);
-    const [paymentError, setPaymentError] = useState(false); // ✅ Added Payment Error State
+    const [paymentError, setPaymentError] = useState(false);
     const [user, setUser] = useState<any>(null);
 
     const [testData, setTestData] = useState<any>(null);
@@ -33,28 +33,28 @@ export default function ActiveTestPage({ params }: { params: Promise<{ id: strin
     const [timeLeft, setTimeLeft] = useState<number>(0);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
 
+    // Ref for the mobile scrollable palette
+    const mobilePaletteRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         const verifyAccessAndFetch = async () => {
             try {
-                // 1. Check Authentication
                 const authRes = await axios.get("/api/auth/me");
                 const currentUser = authRes.data.user;
-                console.log(currentUser)
+
                 if (!currentUser) {
                     setAuthError(true);
                     return router.replace(`/login?redirect=/take-test/${id}`);
                 }
 
-                // ✅ 2. ENFORCE PAID USER STATUS
                 if (!currentUser.isPaidUser) {
                     setPaymentError(true);
                     setLoading(false);
-                    return; // Stop execution here if they aren't paid
+                    return;
                 }
 
                 setUser(currentUser);
 
-                // 3. Fetch Test Data
                 const testRes = await axios.get(`/api/tests/${id}`);
                 const data = testRes.data;
                 setTestData(data);
@@ -88,6 +88,16 @@ export default function ActiveTestPage({ params }: { params: Promise<{ id: strin
     useEffect(() => {
         if (isTimerRunning && timeLeft === 0) submitTest(true);
     }, [timeLeft, isTimerRunning]);
+
+    // Scroll mobile palette to keep active question visible
+    useEffect(() => {
+        if (mobilePaletteRef.current) {
+            const activeButton = mobilePaletteRef.current.children[currentIndex] as HTMLElement;
+            if (activeButton) {
+                activeButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }
+    }, [currentIndex]);
 
     const handleSelectOption = (questionId: string, originalIndex: number) => {
         setAnswers(prev => ({ ...prev, [questionId]: originalIndex }));
@@ -135,7 +145,6 @@ export default function ActiveTestPage({ params }: { params: Promise<{ id: strin
         </div>
     );
 
-    // ✅ NEW: Payment Error UI
     if (paymentError) return (
         <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 px-6 text-center">
             <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6">
@@ -153,24 +162,26 @@ export default function ActiveTestPage({ params }: { params: Promise<{ id: strin
 
     const currentQuestion = questions[currentIndex];
 
-    // --- MAIN TEST UI ---
     return (
-        <main className="h-screen w-screen flex flex-col bg-[#F8FAFC] overflow-hidden">
-            <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 z-10 shrink-0">
-                <div>
-                    <h1 className="text-lg md:text-xl font-black text-[#0F172A] leading-none">{testData.title}</h1>
+        <main className="h-[100dvh] w-screen flex flex-col bg-[#F8FAFC] overflow-hidden">
+            {/* Top Navigation Bar */}
+            <header className="flex items-center justify-between px-4 md:px-6 py-4 bg-white border-b border-slate-200 z-50 shrink-0 shadow-sm">
+                <div className="flex-1 truncate pr-4">
+                    <h1 className="text-base md:text-xl font-black text-[#0F172A] leading-tight truncate">{testData.title}</h1>
                     <span className="text-[9px] md:text-[10px] font-bold tracking-[0.2em] uppercase text-orange-500">
                         {testData.examType} • {testData.subject}
                     </span>
                 </div>
-                <div className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-mono font-bold shadow-lg transition-colors
-                    ${timeLeft < 300 ? 'bg-red-500 text-white animate-pulse' : 'bg-[#0F172A] text-white'}`}>
+                <div className={`flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-xl text-sm font-mono font-bold shadow-sm transition-colors shrink-0
+                    ${timeLeft < 300 ? 'bg-red-50 text-red-600 border border-red-200 animate-pulse' : 'bg-slate-50 text-slate-700 border border-slate-200'}`}>
                     <Clock size={16} /> {formatTime(timeLeft)}
                 </div>
             </header>
 
-            <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-                <aside className="w-full md:w-80 bg-white border-r border-slate-200 p-6 overflow-y-auto shrink-0 flex flex-col">
+            <div className="flex flex-1 overflow-hidden flex-col md:flex-row relative">
+
+                {/* --- LEFT SIDEBAR: Question Palette (Desktop Only) --- */}
+                <aside className="hidden md:flex w-80 bg-white border-r border-slate-200 p-6 overflow-y-auto shrink-0 flex-col">
                     <div className="flex items-center gap-2 mb-6 text-slate-400">
                         <Grid3X3 size={18} />
                         <span className="text-[10px] font-black uppercase tracking-widest">Question Palette</span>
@@ -206,71 +217,120 @@ export default function ActiveTestPage({ params }: { params: Promise<{ id: strin
                     </div>
                 </aside>
 
-                <div className="flex-1 overflow-y-auto p-6 md:p-12 relative bg-[#F8FAFC]">
-                    <div className="max-w-3xl mx-auto pb-24">
-                        <div className="flex items-center gap-4 mb-8">
-                            <span className="w-10 h-10 bg-[#0F172A] text-white rounded-xl flex items-center justify-center font-black">
+                {/* --- RIGHT PANEL: Active Question Area --- */}
+                <div className="flex-1 flex flex-col overflow-hidden relative bg-[#F8FAFC]">
+
+                    {/* STICKY QUESTION BLOCK */}
+                    <div className="bg-white border-b border-slate-200 px-4 py-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.03)] shrink-0 max-h-[40vh] overflow-y-auto">
+                        <div className="max-w-3xl mx-auto flex gap-4">
+                            {/* Question Number Badge */}
+                            <span className="w-8 h-8 md:w-10 md:h-10 shrink-0 bg-[#0F172A] text-white rounded-xl flex items-center justify-center font-black text-sm">
                                 {currentIndex + 1}
                             </span>
-                            <div className="h-[2px] flex-1 bg-slate-200" />
-                        </div>
-
-                        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12 shadow-sm mb-8">
-                            <h2 className="text-xl md:text-2xl font-bold text-[#0F172A] mb-8 leading-relaxed">
+                            {/* Question Text */}
+                            <h2 className="text-lg md:text-2xl font-bold text-[#0F172A] leading-relaxed mt-0.5 md:mt-1">
                                 {currentQuestion.questionText}
                             </h2>
+                        </div>
+                    </div>
 
-                            <div className="grid gap-4">
+                    {/* SCROLLABLE OPTIONS BLOCK */}
+                    <div className="flex-1 overflow-y-auto px-4 py-6 md:p-8">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="grid gap-3 md:gap-4">
                                 {currentQuestion.shuffledOptions.map((opt: any, i: number) => {
                                     const isSelected = answers[currentQuestion._id] === opt.originalIndex;
                                     return (
                                         <button
                                             key={i}
                                             onClick={() => handleSelectOption(currentQuestion._id, opt.originalIndex)}
-                                            className={`text-left w-full p-6 rounded-2xl border-2 transition-all font-semibold flex items-center justify-between group
-                                                ${isSelected ? 'border-orange-500 bg-orange-50/50 text-orange-900 shadow-md' : 'border-slate-100 hover:border-orange-200 hover:bg-slate-50 text-slate-700'}`}
+                                            className={`text-left w-full p-4 md:p-6 rounded-2xl border-2 transition-all font-semibold flex items-center justify-between group
+                                                ${isSelected ? 'border-orange-500 bg-orange-50/50 text-orange-900 shadow-md' : 'border-slate-100 bg-white hover:border-orange-200 hover:bg-slate-50 text-slate-700'}`}
                                         >
-                                            <span>{opt.text}</span>
-                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ml-4
+                                            <span className="text-sm md:text-base pr-4 leading-relaxed">{opt.text}</span>
+
+                                            {/* Custom Radio Circle */}
+                                            <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0
                                                 ${isSelected ? 'border-orange-500 bg-orange-500' : 'border-slate-300 group-hover:border-orange-300'}`}>
-                                                {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                                                {isSelected && <div className="w-2 h-2 md:w-2.5 md:h-2.5 bg-white rounded-full" />}
                                             </div>
                                         </button>
                                     );
                                 })}
                             </div>
                         </div>
+                    </div>
 
-                        <div className="flex items-center justify-between">
-                            <button
-                                onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-                                disabled={currentIndex === 0}
-                                className="flex items-center gap-2 px-6 py-4 rounded-xl font-black uppercase text-xs tracking-widest text-slate-500 hover:bg-white hover:text-[#0F172A] transition-all disabled:opacity-50 disabled:hover:bg-transparent"
-                            >
-                                <ChevronLeft size={16} /> Previous
-                            </button>
+                    {/* ✅ NEW: BOTTOM NAVIGATION & MOBILE PALETTE */}
+                    <div className="bg-white border-t border-slate-200 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] z-40 shrink-0">
 
-                            {currentIndex === questions.length - 1 ? (
-                                <button
-                                    onClick={() => submitTest()}
-                                    disabled={submitting}
-                                    className="flex items-center gap-2 px-8 py-4 rounded-xl font-black uppercase text-xs tracking-widest bg-emerald-500 text-white hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 transition-all disabled:opacity-50"
-                                >
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 size={16} />}
-                                    {submitting ? 'Grading...' : 'Submit Exam'}
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                                    className="flex items-center gap-2 px-8 py-4 rounded-xl font-black uppercase text-xs tracking-widest bg-[#0F172A] text-white hover:bg-black shadow-xl shadow-slate-900/20 transition-all"
-                                >
-                                    Next <ChevronRight size={16} />
-                                </button>
-                            )}
+                        {/* MOBILE QUESTION PALETTE (Horizontal Scroll, hidden on desktop) */}
+                        <div
+                            ref={mobilePaletteRef}
+                            className="md:hidden flex items-center gap-2 px-4 py-3 overflow-x-auto bg-slate-50 border-b border-slate-100 hide-scrollbar"
+                        >
+                            {questions.map((q, idx) => {
+                                const isAnswered = answers[q._id] !== undefined;
+                                const isCurrent = currentIndex === idx;
+                                return (
+                                    <button
+                                        key={q._id}
+                                        onClick={() => setCurrentIndex(idx)}
+                                        className={`w-10 h-10 shrink-0 rounded-xl text-xs font-black transition-all flex items-center justify-center border-2
+                                            ${isCurrent ? 'border-[#0F172A] ring-2 text-amber-500 bg-amber-100 ring-slate-100' :
+                                                isAnswered ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-100'}`}
+                                    >
+                                        {idx + 1}
+                                    </button>
+                                );
+                            })}
                         </div>
+
+                        {/* PREV / NEXT / SUBMIT BUTTONS */}
+                        <div className="px-4 py-4 md:px-8 md:py-6">
+                            <div className="max-w-3xl mx-auto flex items-center justify-between">
+                                <button
+                                    onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                                    disabled={currentIndex === 0}
+                                    className="flex items-center gap-2 px-4 py-3 md:px-6 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest text-slate-500 hover:bg-slate-50 hover:text-[#0F172A] transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                                >
+                                    <ChevronLeft size={16} /> <span className="hidden sm:inline">Previous</span>
+                                </button>
+
+                                {currentIndex === questions.length - 1 ? (
+                                    <button
+                                        onClick={() => submitTest()}
+                                        disabled={submitting}
+                                        className="flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
+                                    >
+                                        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 size={16} />}
+                                        {submitting ? 'Grading...' : 'Submit'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                                        className="flex items-center gap-2 px-6 py-3 md:px-8 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest bg-[#0F172A] text-white hover:bg-black shadow-lg shadow-slate-900/20 transition-all"
+                                    >
+                                        <span className="hidden sm:inline">Next</span> <ChevronRight size={16} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
+
+            {/* Custom CSS to hide scrollbar but keep functionality for the horizontal strip */}
+            <style jsx global>{`
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .hide-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </main>
     );
 }

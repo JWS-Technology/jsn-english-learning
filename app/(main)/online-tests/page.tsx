@@ -77,7 +77,7 @@ export default function TestsListingPage() {
 
             const res = await axios.get(`/api/admin/tests/${testId}`);
             const fullTest = res.data;
-            // console.log("Test", fullTest)
+            // console.log("Test", fullTest);
             if (!fullTest.questions || fullTest.questions.length === 0) {
                 alert("No questions found for this test.");
                 setDownloadingId(null);
