@@ -10,7 +10,8 @@ import {
     Package,
     LogOut,
     ShieldCheck,
-    Home
+    Home,
+    Megaphone
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
     { name: "Manage Student", href: "/admin/users", icon: Users },
     { name: "Study Materials", href: "/admin/materials", icon: BookOpen },
     { name: "Physical Orders", href: "/admin/orders", icon: Package },
+    { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
 ];
 
 export default function AdminSidebar() {

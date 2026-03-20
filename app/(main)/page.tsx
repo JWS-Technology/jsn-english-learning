@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import {
   ArrowRight,
   CheckCircle2,
@@ -11,15 +13,42 @@ import {
   GraduationCap,
   PlayCircle,
   FileText,
-  Star
+  BellRing,
+  Megaphone
 } from "lucide-react";
 import Image from "next/image";
 
 export default function HomePage() {
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    if (marqueeRef.current && containerRef.current) {
+      setWidth(marqueeRef.current.scrollWidth);
+      setContainerWidth(containerRef.current.offsetWidth);
+    }
+  }, [announcements]);
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const res = await axios.get("/api/announcements?active=true");
+        setAnnouncements(res.data);
+      } catch (error) {
+        console.error("Failed to load announcements", error);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
+
   return (
     <main className="flex flex-col bg-white">
+
       {/* --- HERO SECTION --- */}
-      <section className="relative min-h-screen lg:min-h-[90vh] flex items-center pt-24 pb-12 overflow-hidden bg-[#0F172A]">
+      <section className="relative min-h-screen lg:min-h-[90vh] flex flex-col justify-center pt-24 pb-12 overflow-hidden bg-[#0F172A]">
+
         {/* Senior UI Detail: Background Texture & Glows */}
         <div className="absolute inset-0 z-0 opacity-20"
           style={{ backgroundImage: `radial-gradient(#ffffff 0.5px, transparent 0.5px)`, backgroundSize: '24px 24px' }} />
@@ -29,7 +58,8 @@ export default function HomePage() {
           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-orange-600/20 rounded-full blur-[120px]" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center relative z-10">
+
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center relative z-10 mt-10">
           {/* Left Content */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -37,13 +67,6 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="text-center lg:text-left"
           >
-            {/* <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8">
-              <Star className="w-4 h-4 text-orange-500 fill-orange-500" />
-              <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">
-                Verified TRB Success Portal 2026
-              </span>
-            </div> */}
-
             <h1 className="text-5xl md:text-7xl font-black text-white leading-[1.05] tracking-tighter">
               Master Your <br />
               <span className="text-orange-500 italic font-serif">TRB Dreams</span>
@@ -114,11 +137,81 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Decorative Background Glow */}
             <div className="absolute inset-0 bg-orange-600/20 blur-[120px] -z-10 rounded-full" />
           </motion.div>
+
         </div>
+        {/* ✅ NEW: Framer Motion Infinite Scrolling Marquee */}
+        {announcements.length > 0 && (
+          <div
+            ref={containerRef}
+            className="absolute bottom-[80px] md:bottom-[90px] left-0 w-full bg-orange-500/10 border-y border-orange-500/20 py-3 z-20 overflow-hidden"
+          >
+            <motion.div
+              ref={marqueeRef}
+              animate={{ x: [containerWidth, -width] }}
+              transition={{
+                ease: "linear",
+                duration: (width + containerWidth) / 80,
+                repeat: Infinity,
+              }}
+              className="flex whitespace-nowrap"
+            >
+              {[...announcements, ...announcements].map((item, i) => (
+                <span
+                  key={`${item._id}-${i}`}
+                  className="text-orange-400 font-bold text-sm tracking-wide mx-8 flex items-center gap-3"
+                >
+                  <BellRing className="w-4 h-4 shrink-0" />
+                  {item.message}
+                </span>
+              ))}
+            </motion.div>
+          </div>
+        )}
+
       </section>
+
+      {/* --- ✅ NEW: ANNOUNCEMENTS SECTION --- */}
+      {announcements.length > 0 && (
+        <section className="py-20 bg-slate-50 border-b border-slate-100 relative z-20">
+          <div className="max-w-7xl mx-auto px-6">
+
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+              <div>
+                <span className="text-orange-500 font-black text-[10px] uppercase tracking-[0.3em]">Stay Updated</span>
+                <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter mt-2 flex items-center gap-3">
+                  <Megaphone className="w-8 h-8 text-orange-500" /> Latest Announcements
+                </h2>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {announcements.map((item, index) => (
+                <motion.div
+                  key={item._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-orange-200 transition-all group"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      {new Date(item.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
+                  </div>
+                  <p className="text-slate-800 font-bold leading-relaxed text-lg">
+                    {item.message}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+      )}
 
       {/* --- STATS BAR --- */}
       <section className="py-20 bg-white relative z-20">
@@ -190,7 +283,6 @@ export default function HomePage() {
       <section className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <div className="bg-[#0F172A] rounded-[4rem] p-8 md:p-20 text-white relative">
-            {/* Background Accent */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-orange-600/10 rounded-full blur-[100px]" />
 
             <div className="grid lg:grid-cols-5 gap-16 items-center relative z-10">
