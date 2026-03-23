@@ -62,7 +62,7 @@ export default function Footer() {
                     © {new Date().getFullYear()} JSN English Learning. All rights reserved.
                 </p>
                 <p className="mt-1 text-slate-400">
-                    Founded by Dr. S. Jerald Sagaya Nathan | Website Developed by Joe Rakesh | JWS
+                    Founded by Dr. S. Jerald Sagaya Nathan | Website Developed by <a href="http://joerakesh.me" target="_blank" >Joe Rakesh | JWS</a>
                 </p>
             </div>
         </footer>
