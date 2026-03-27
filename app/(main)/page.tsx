@@ -160,7 +160,7 @@ export default function HomePage() {
               {[...announcements, ...announcements].map((item, i) => (
                 <span
                   key={`${item._id}-${i}`}
-                  className="text-orange-400 font-bold text-sm tracking-wide mx-8 flex items-center gap-3"
+                  className="text-white font-bold text-sm tracking-wide mx-8 flex items-center gap-3"
                 >
                   <BellRing className="w-4 h-4 shrink-0" />
                   {item.message}
