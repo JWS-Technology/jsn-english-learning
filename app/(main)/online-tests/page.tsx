@@ -33,7 +33,7 @@ type Test = {
 };
 
 export default function TestsListingPage() {
-    const router = useRouter(); // ✅ Added router for redirects
+    const router = useRouter();
     const [tests, setTests] = useState<Test[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
@@ -54,6 +54,7 @@ export default function TestsListingPage() {
                     if (authRes.data.success) {
                         setUser(authRes.data.user);
                     }
+                    console.log(user)
                 } catch (authErr) {
                     setUser(null);
                 }
@@ -72,7 +73,7 @@ export default function TestsListingPage() {
         const matchesFilter = filter === "ALL" || t.examType === filter;
         return matchesSearch && matchesFilter;
     });
-
+    console.log(user)
     const downloadTestPDF = async (e: React.MouseEvent, testId: string, title: string, examType: string, subject: string, withAnswers: boolean) => {
         e.preventDefault();
         e.stopPropagation();
@@ -194,7 +195,6 @@ export default function TestsListingPage() {
 
     return (
         <main className="min-h-screen bg-[#F8FAFC]">
-            {/* --- HERO SECTION --- */}
             <section className="relative pt-32 pb-44 px-6 bg-[#0F172A] overflow-hidden">
                 <div className="absolute inset-0 z-0 opacity-10"
                     style={{ backgroundImage: `radial-gradient(#ffffff 0.5px, transparent 0.5px)`, backgroundSize: '30px 30px' }} />
@@ -230,7 +230,6 @@ export default function TestsListingPage() {
                 </div>
             </section>
 
-            {/* --- SEARCH & FILTER BAR --- */}
             <div className="max-w-6xl mx-auto px-6 -mt-14 relative z-30">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -264,7 +263,6 @@ export default function TestsListingPage() {
                 </motion.div>
             </div>
 
-            {/* --- TESTS GRID --- */}
             <section className="max-w-7xl mx-auto px-6 py-24">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-6">
@@ -287,25 +285,23 @@ export default function TestsListingPage() {
                                         className="group bg-white border border-slate-100 rounded-[2.5rem] p-8 transition-all hover:border-blue-200 hover:shadow-2xl flex flex-col h-full relative overflow-visible"
                                     >
 
-                                        {/* ✅ SECURED TOGGLE DROPDOWN BUTTON */}
+                                        {/* ✅ SECURED TOGGLE DROPDOWN BUTTON (Updated for granular access) */}
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
 
-                                                // 1. Check if user is logged in
                                                 if (!user) {
                                                     router.push(`/login?redirect=/online-tests`);
                                                     return;
                                                 }
 
-                                                // 2. Check if user has paid access
-                                                if (!user.isPaidUser) {
-                                                    alert("Premium Access Required: You need an approved paid account to download test papers. Please contact the administrator.");
+                                                // Check for 'tests' permission specifically
+                                                if (user.role !== 'admin' && !user.access?.tests) {
+                                                    alert("Premium Access Required: You need an approved Test Series account to download test papers. Please contact the administrator.");
                                                     return;
                                                 }
 
-                                                // 3. If passed both checks, toggle dropdown
                                                 setOpenDropdownId(openDropdownId === item._id ? null : item._id);
                                             }}
                                             className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-400 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm z-20"
@@ -318,7 +314,7 @@ export default function TestsListingPage() {
                                             )}
                                         </button>
 
-                                        {/* ✅ ANIMATED DROPDOWN MENU */}
+                                        {/* ANIMATED DROPDOWN MENU */}
                                         <AnimatePresence>
                                             {openDropdownId === item._id && (
                                                 <motion.div
@@ -353,7 +349,6 @@ export default function TestsListingPage() {
                                             )}
                                         </AnimatePresence>
 
-                                        {/* Rest of the Card UI */}
                                         <div className="mb-8 flex items-center justify-between relative z-10 pr-12">
                                             <div className="w-14 h-14 bg-slate-50 text-slate-900 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
                                                 {user ? <PlayCircle className="w-7 h-7" /> : <Lock className="w-6 h-6" />}
