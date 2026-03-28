@@ -3,24 +3,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    Search,
-    Clock,
-    ArrowRight,
-    BookOpen,
-    Loader2,
-    Lock,
-    PlayCircle,
-    CheckCircle2,
-    MonitorPlay,
-    Download,
-    FileText,
-    CheckSquare
-} from "lucide-react";
+import { Search, Clock, ArrowRight, BookOpen, Loader2, Lock, PlayCircle, CheckCircle2, MonitorPlay } from "lucide-react";
 
-import jsPDF from "jspdf";
+// ✅ Import our new clean component
+import TestDownloadButton from "@/components/TestDownloadButton";
 
 type Test = {
     _id: string;
@@ -33,15 +20,11 @@ type Test = {
 };
 
 export default function TestsListingPage() {
-    const router = useRouter();
     const [tests, setTests] = useState<Test[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("ALL");
-
-    const [downloadingId, setDownloadingId] = useState<string | null>(null);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -54,7 +37,6 @@ export default function TestsListingPage() {
                     if (authRes.data.success) {
                         setUser(authRes.data.user);
                     }
-                    console.log(user)
                 } catch (authErr) {
                     setUser(null);
                 }
@@ -73,125 +55,6 @@ export default function TestsListingPage() {
         const matchesFilter = filter === "ALL" || t.examType === filter;
         return matchesSearch && matchesFilter;
     });
-    console.log(user)
-    const downloadTestPDF = async (e: React.MouseEvent, testId: string, title: string, examType: string, subject: string, withAnswers: boolean) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setOpenDropdownId(null);
-
-        try {
-            setDownloadingId(testId);
-
-            const res = await axios.get(`/api/admin/tests/${testId}`);
-            const fullTest = res.data;
-
-            if (!fullTest.questions || fullTest.questions.length === 0) {
-                alert("No questions found for this test.");
-                setDownloadingId(null);
-                return;
-            }
-
-            const doc = new jsPDF();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const pageWidth = doc.internal.pageSize.getWidth();
-            let yPos = 40;
-
-            const drawPageBackground = (isFirstPage: boolean) => {
-                doc.setDrawColor(15, 23, 42);
-                doc.setLineWidth(0.5);
-                doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
-
-                doc.saveGraphicsState();
-                (doc as any).setGState(new (doc as any).GState({ opacity: 0.08 }));
-                doc.setTextColor(15, 23, 42);
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(55);
-                doc.text("JSN ENGLISH LEARNING", pageWidth / 2, pageHeight / 2, {
-                    angle: 45,
-                    align: "center",
-                    baseline: "middle"
-                });
-                doc.restoreGraphicsState();
-
-                doc.setTextColor(100, 116, 139);
-                doc.setFontSize(9);
-                doc.setFont("helvetica", "bold");
-                doc.text("Dr. S. Jerald Sagaya Nathan - 9843287913", 15, pageHeight - 15);
-                doc.text(`Page ${(doc as any).internal.getNumberOfPages()}`, pageWidth - 15, pageHeight - 15, { align: "right" });
-
-                if (isFirstPage) {
-                    doc.setTextColor(15, 23, 42);
-                    doc.setFontSize(14);
-                    doc.text(`${examType.toUpperCase()} ENGLISH`, pageWidth / 2, 22, { align: "center" });
-
-                    const documentType = withAnswers ? "Answer Key" : "Question Paper";
-                    doc.setFontSize(11);
-                    doc.setFont("helvetica", "normal");
-                    doc.text(`${subject} - ${title} (${documentType})`, pageWidth / 2, 28, { align: "center" });
-
-                    doc.setDrawColor(200, 200, 200);
-                    doc.line(15, 32, pageWidth - 15, 32);
-                }
-            };
-
-            drawPageBackground(true);
-
-            fullTest.questions.forEach((q: any, index: number) => {
-
-                if (yPos > pageHeight - 40) {
-                    doc.addPage();
-                    drawPageBackground(false);
-                    yPos = 25;
-                }
-
-                doc.setFont("helvetica", "bold");
-                doc.setTextColor(15, 23, 42);
-                doc.setFontSize(11);
-                const qText = `${index + 1}. ${q.questionText}`;
-                const qLines = doc.splitTextToSize(qText, pageWidth - 30);
-                doc.text(qLines, 15, yPos);
-                yPos += (qLines.length * 6) + 2;
-
-                q.options.forEach((opt: string, optIndex: number) => {
-                    if (yPos > pageHeight - 30) {
-                        doc.addPage();
-                        drawPageBackground(false);
-                        yPos = 25;
-                    }
-
-                    const isCorrect = q.correctAnswer === optIndex;
-                    const letter = String.fromCharCode(65 + optIndex);
-
-                    doc.setFont("helvetica", "bold");
-
-                    if (isCorrect && withAnswers) {
-                        doc.setTextColor(22, 163, 74);
-                    } else {
-                        doc.setTextColor(71, 85, 105);
-                    }
-
-                    const baseOptText = opt.startsWith(`${letter})`) ? opt : `${letter}) ${opt}`;
-                    const optText = (isCorrect && withAnswers) ? `${baseOptText}  (✓ Correct Answer)` : baseOptText;
-
-                    const optLines = doc.splitTextToSize(optText, pageWidth - 35);
-                    doc.text(optLines, 20, yPos);
-
-                    yPos += (optLines.length * 5) + 2;
-                });
-
-                yPos += 6;
-            });
-
-            const fileNameSuffix = withAnswers ? "Answer_Key" : "Question_Paper";
-            doc.save(`${title.replace(/\s+/g, '_')}_${fileNameSuffix}.pdf`);
-
-        } catch (error) {
-            console.error("Download Error:", error);
-            alert("Failed to download document.");
-        } finally {
-            setDownloadingId(null);
-        }
-    };
 
     return (
         <main className="min-h-screen bg-[#F8FAFC]">
@@ -285,69 +148,14 @@ export default function TestsListingPage() {
                                         className="group bg-white border border-slate-100 rounded-[2.5rem] p-8 transition-all hover:border-blue-200 hover:shadow-2xl flex flex-col h-full relative overflow-visible"
                                     >
 
-                                        {/* ✅ SECURED TOGGLE DROPDOWN BUTTON (Updated for granular access) */}
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-
-                                                if (!user) {
-                                                    router.push(`/login?redirect=/online-tests`);
-                                                    return;
-                                                }
-
-                                                // Check for 'tests' permission specifically
-                                                if (user.role !== 'admin' && !user.access?.tests) {
-                                                    alert("Premium Access Required: You need an approved Test Series account to download test papers. Please contact the administrator.");
-                                                    return;
-                                                }
-
-                                                setOpenDropdownId(openDropdownId === item._id ? null : item._id);
-                                            }}
-                                            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-400 hover:bg-emerald-500 hover:text-white rounded-xl transition-all shadow-sm z-20"
-                                            title="Download Options"
-                                        >
-                                            {downloadingId === item._id ? (
-                                                <Loader2 size={16} className="animate-spin" />
-                                            ) : (
-                                                <Download size={16} />
-                                            )}
-                                        </button>
-
-                                        {/* ANIMATED DROPDOWN MENU */}
-                                        <AnimatePresence>
-                                            {openDropdownId === item._id && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                                    transition={{ duration: 0.15 }}
-                                                    className="absolute top-16 right-6 w-56 bg-white border border-slate-100 shadow-[0_20px_60px_rgba(0,0,0,0.1)] rounded-2xl p-2 z-30 flex flex-col gap-1"
-                                                >
-                                                    <button
-                                                        onClick={(e) => downloadTestPDF(e, item._id, item.title, item.examType, item.subject, false)}
-                                                        className="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 rounded-xl transition-colors group/btn"
-                                                    >
-                                                        <FileText className="w-4 h-4 text-slate-400 group-hover/btn:text-slate-600" />
-                                                        <div>
-                                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-700">Question Paper</div>
-                                                            <div className="text-[9px] font-medium text-slate-400">Without answers</div>
-                                                        </div>
-                                                    </button>
-
-                                                    <button
-                                                        onClick={(e) => downloadTestPDF(e, item._id, item.title, item.examType, item.subject, true)}
-                                                        className="flex items-center gap-3 px-4 py-3 text-left hover:bg-emerald-50 rounded-xl transition-colors group/btn"
-                                                    >
-                                                        <CheckSquare className="w-4 h-4 text-emerald-400 group-hover/btn:text-emerald-600" />
-                                                        <div>
-                                                            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Answer Key</div>
-                                                            <div className="text-[9px] font-medium text-emerald-500/80">With correct answers</div>
-                                                        </div>
-                                                    </button>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                        {/* ✅ Much cleaner! Render the separate button component here */}
+                                        <TestDownloadButton
+                                            testId={item._id}
+                                            title={item.title}
+                                            examType={item.examType}
+                                            subject={item.subject}
+                                            user={user}
+                                        />
 
                                         <div className="mb-8 flex items-center justify-between relative z-10 pr-12">
                                             <div className="w-14 h-14 bg-slate-50 text-slate-900 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-500 shadow-sm">
