@@ -18,7 +18,15 @@ const UserSchema = new Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    isPaidUser: { type: Boolean, default: false },
+
+    // ✅ NEW: Granular Access Control
+    // Replaces the single `isPaidUser` boolean
+    access: {
+      tests: { type: Boolean, default: false },
+      materials: { type: Boolean, default: false },
+      // You can easily add more later:
+      // videos: { type: Boolean, default: false }
+    },
   },
   { timestamps: true },
 );
