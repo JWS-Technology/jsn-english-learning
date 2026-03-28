@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { Loader2, ArrowLeft, ShieldCheck, User, Mail, Lock, Zap } from "lucide-react";
+import { Loader2, ArrowLeft, ShieldCheck, User, Mail, Lock, MonitorPlay, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -10,12 +10,17 @@ export default function AdminCreateUserPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    // ✅ Updated Form State for Granular Access
     const [form, setForm] = useState({
         name: "",
         email: "",
         password: "",
         role: "user",
-        isPaidUser: false
+        access: {
+            tests: false,
+            materials: false
+        }
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +30,7 @@ export default function AdminCreateUserPage() {
 
         try {
             await axios.post("/api/admin/users", form);
-            router.push("/users"); // ✅ Updated routing to match new folder structure
+            router.push("/admin/users"); // Route back to the roster
         } catch (err: any) {
             setError(err?.response?.data?.message || "Failed to create user");
             setLoading(false);
@@ -105,23 +110,44 @@ export default function AdminCreateUserPage() {
                         </div>
                     </div>
 
-                    {/* Premium Exam Access Toggle */}
-                    <div className="flex items-center justify-between p-5 bg-blue-50/50 border border-blue-100 rounded-2xl mt-4">
-                        <div>
-                            <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest flex items-center gap-2">
-                                <Zap className="w-4 h-4 text-blue-600" /> Grant Exam Access
-                            </p>
-                            <p className="text-[10px] text-slate-500 font-bold mt-1">Sets "isPaidUser" to true instantly.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        {/* ✅ CBT Test Access Toggle */}
+                        <div className="flex flex-col justify-between p-5 bg-blue-50/50 border border-blue-100 rounded-2xl gap-4">
+                            <div>
+                                <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest flex items-center gap-2">
+                                    <MonitorPlay className="w-4 h-4 text-blue-600" /> Test Access
+                                </p>
+                                <p className="text-[10px] text-slate-500 font-bold mt-1 leading-tight">Grant access to mock exams.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer mt-auto self-start">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={form.access.tests}
+                                    onChange={(e) => setForm({ ...form, access: { ...form.access, tests: e.target.checked } })}
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={form.isPaidUser}
-                                onChange={(e) => setForm({ ...form, isPaidUser: e.target.checked })}
-                            />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
+
+                        {/* ✅ Materials Access Toggle */}
+                        <div className="flex flex-col justify-between p-5 bg-emerald-50/50 border border-emerald-100 rounded-2xl gap-4">
+                            <div>
+                                <p className="text-[11px] font-black text-[#0F172A] uppercase tracking-widest flex items-center gap-2">
+                                    <BookOpen className="w-4 h-4 text-emerald-600" /> Materials Access
+                                </p>
+                                <p className="text-[10px] text-slate-500 font-bold mt-1 leading-tight">Grant access to study PDFs.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer mt-auto self-start">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={form.access.materials}
+                                    onChange={(e) => setForm({ ...form, access: { ...form.access, materials: e.target.checked } })}
+                                />
+                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
                     </div>
 
                     <button
