@@ -20,11 +20,16 @@ export async function PATCH(
       return NextResponse.json({ message: "Invalid User ID" }, { status: 400 });
     }
 
-    // Update the user with whatever fields were passed in the body (e.g., isPaidUser)
+    // Security Check: Prevent accidental password modifications via this route
+    if (body.password) {
+      delete body.password;
+    }
+
+    // Update the user with passed fields (handles the new `access: { tests, materials }` object perfectly)
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { $set: body },
-      { new: true },
+      { new: true, runValidators: true },
     ).select("-password");
 
     if (!updatedUser) {
@@ -36,6 +41,7 @@ export async function PATCH(
       { status: 200 },
     );
   } catch (error: any) {
+    console.error("Update User Error:", error);
     return NextResponse.json(
       { message: "Failed to update user" },
       { status: 500 },
@@ -66,6 +72,7 @@ export async function DELETE(
       { status: 200 },
     );
   } catch (error: any) {
+    console.error("Delete User Error:", error);
     return NextResponse.json(
       { message: "Failed to delete user" },
       { status: 500 },
