@@ -23,9 +23,9 @@ export async function GET() {
     await connectDB();
 
     // 3. Fetch Fresh Data from MongoDB
-    // We use .lean() for performance and .select("-password") for security
+    // ✅ CHANGED: Replaced "isPaidUser" with "access" in the select statement
     const user = await User.findById(decoded.userId)
-      .select("name email role isPaidUser")
+      .select("name email role access")
       .lean();
 
     if (!user) {
@@ -34,7 +34,9 @@ export async function GET() {
         { status: 404 },
       );
     }
+
     // 4. Return the actual DB data
+    // ✅ CHANGED: Pass the access object to the frontend with a safe fallback
     return NextResponse.json({
       success: true,
       user: {
@@ -42,7 +44,7 @@ export async function GET() {
         name: user.name,
         email: user.email,
         role: user.role,
-        isPaidUser: user.isPaidUser,
+        access: user.access || { tests: false, materials: false },
       },
     });
   } catch (error) {
