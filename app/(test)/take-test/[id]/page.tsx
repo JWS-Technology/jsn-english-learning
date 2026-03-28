@@ -47,7 +47,7 @@ export default function ActiveTestPage({ params }: { params: Promise<{ id: strin
                     return router.replace(`/login?redirect=/take-test/${id}`);
                 }
 
-                if (!currentUser.isPaidUser) {
+                if (currentUser.role !== 'admin' && !currentUser.access?.tests) {
                     setPaymentError(true);
                     setLoading(false);
                     return;
