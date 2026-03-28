@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { Loader2, ShieldCheck, UserPlus, CheckCircle2, XCircle, Search, Trash2 } from "lucide-react";
+import { Loader2, UserPlus, Search, Trash2, BookOpen, MonitorPlay, Lock, Unlock } from "lucide-react";
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -25,14 +25,24 @@ export default function AdminUsersPage() {
         }
     };
 
-    const togglePaidStatus = async (userId: string, currentStatus: boolean) => {
+    // ✅ NEW: Granular Toggle Function
+    const toggleAccess = async (userId: string, currentAccess: any, field: 'tests' | 'materials') => {
+        // Fallback to false if access object doesn't exist yet
+        const safeAccess = currentAccess || { tests: false, materials: false };
+        const updatedAccess = {
+            ...safeAccess,
+            [field]: !safeAccess[field]
+        };
+
         try {
             // Optimistic UI update
-            setUsers(users.map(u => u._id === userId ? { ...u, isPaidUser: !currentStatus } : u));
-            await axios.patch(`/api/admin/users/${userId}`, { isPaidUser: !currentStatus });
+            setUsers(users.map(u => u._id === userId ? { ...u, access: updatedAccess } : u));
+
+            // Send the entire updated access object to the backend
+            await axios.patch(`/api/admin/users/${userId}`, { access: updatedAccess });
         } catch (error) {
-            alert("Failed to update status");
-            fetchUsers();
+            alert(`Failed to update ${field} access.`);
+            fetchUsers(); // Revert on failure
         }
     };
 
@@ -97,7 +107,7 @@ export default function AdminUsersPage() {
                             <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                 <th className="p-6 pl-10">Student Name</th>
                                 <th className="p-6">Email Address</th>
-                                <th className="p-6">Role</th>
+                                <th className="p-6">Permissions (Tests & Materials)</th>
                                 <th className="p-6 text-right pr-10">Actions</th>
                             </tr>
                         </thead>
@@ -107,37 +117,61 @@ export default function AdminUsersPage() {
                                     <td colSpan={4} className="p-10 text-center text-slate-400 font-bold text-sm">No users found matching your search.</td>
                                 </tr>
                             ) : (
-                                filteredUsers.map((user) => (
-                                    <tr key={user._id} className="hover:bg-blue-50/30 transition-colors group">
-                                        <td className="p-6 pl-10 font-bold text-[#0F172A]">{user.name}</td>
-                                        <td className="p-6 text-sm text-slate-500 font-medium">{user.email}</td>
-                                        <td className="p-6">
-                                            <span className={`text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest border ${user.role === 'admin' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        {/* Action buttons (Toggle Paid + Delete) */}
-                                        <td className="p-6 text-right pr-10 flex items-center justify-end gap-3">
-                                            <button
-                                                onClick={() => togglePaidStatus(user._id, user.isPaidUser)}
-                                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${user.isPaidUser ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100' : 'bg-slate-50 text-slate-400 border border-slate-200 hover:bg-slate-100 hover:text-slate-600'}`}
-                                            >
-                                                {user.isPaidUser ? <><CheckCircle2 size={14} /> Approved</> : <><XCircle size={14} /> Revoked</>}
-                                            </button>
+                                filteredUsers.map((user) => {
+                                    // Safe fallback for users who might not have the access object yet
+                                    const hasTestAccess = user.access?.tests === true;
+                                    const hasMaterialAccess = user.access?.materials === true;
 
-                                            {/* Delete Button (Disable deletion of admins as a safety net) */}
-                                            {user.role !== 'admin' && (
+                                    return (
+                                        <tr key={user._id} className="hover:bg-blue-50/30 transition-colors group">
+                                            <td className="p-6 pl-10 font-bold text-[#0F172A]">{user.name}</td>
+                                            <td className="p-6 text-sm text-slate-500 font-medium">{user.email}</td>
+
+                                            {/* ✅ NEW: Granular Permissions Toggles */}
+                                            <td className="p-6 flex items-center gap-3">
+
+                                                {/* Tests Toggle */}
                                                 <button
-                                                    onClick={() => deleteUser(user._id)}
-                                                    className="p-2 bg-slate-50 text-slate-400 hover:bg-red-500 hover:text-white rounded-xl transition-all"
-                                                    title="Delete User"
+                                                    onClick={() => toggleAccess(user._id, user.access, 'tests')}
+                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${hasTestAccess ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100 hover:text-slate-600'}`}
+                                                    title="Toggle Test Access"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <MonitorPlay size={14} />
+                                                    Tests: {hasTestAccess ? <Unlock size={12} /> : <Lock size={12} />}
                                                 </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
+
+                                                {/* Materials Toggle */}
+                                                <button
+                                                    onClick={() => toggleAccess(user._id, user.access, 'materials')}
+                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${hasMaterialAccess ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100 hover:text-slate-600'}`}
+                                                    title="Toggle Material Access"
+                                                >
+                                                    <BookOpen size={14} />
+                                                    Docs: {hasMaterialAccess ? <Unlock size={12} /> : <Lock size={12} />}
+                                                </button>
+
+                                            </td>
+
+                                            {/* Action buttons (Delete) */}
+                                            <td className="p-6 text-right pr-10">
+                                                {user.role !== 'admin' && (
+                                                    <button
+                                                        onClick={() => deleteUser(user._id)}
+                                                        className="p-2 bg-slate-50 text-slate-400 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                                                        title="Delete User"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                                {user.role === 'admin' && (
+                                                    <span className="text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest border bg-indigo-50 text-indigo-600 border-indigo-100">
+                                                        Admin
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
