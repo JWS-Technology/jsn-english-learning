@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import User from "@/models/user.model"; // Adjust path to your User model
+import User from "@/models/user.model";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -24,7 +24,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const { name, email, password, role, isPaidUser } = await req.json();
+    // ✅ Extract "access" from the incoming JSON instead of "isPaidUser"
+    const { name, email, password, role, access } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -48,7 +49,8 @@ export async function POST(req: Request) {
       email,
       password: hashedPassword,
       role: role || "user",
-      isPaidUser: isPaidUser || false,
+      // ✅ Apply the granular access object directly
+      access: access || { tests: false, materials: false },
     });
 
     return NextResponse.json(
