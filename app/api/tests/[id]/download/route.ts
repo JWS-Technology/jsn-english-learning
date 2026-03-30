@@ -1,15 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"; // ✅ Changed to NextRequest
 import { jsPDF } from "jspdf";
-import Test from "@/models/test.model"; // Adjust to your actual model path
+import Test from "@/models/test.model";
 import { connectDB } from "@/config/dbConnect";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } },
+  req: NextRequest, // ✅ Use NextRequest here
+  { params }: { params: Promise<{ id: string }> }, // ✅ Type params as a Promise
 ) {
   try {
     await connectDB();
-    const testId = params.id;
+
+    // ✅ Await the params to resolve the ID
+    const resolvedParams = await params;
+    const testId = resolvedParams.id;
 
     // Check if the user wants answers via query params (?withAnswers=true)
     const { searchParams } = new URL(req.url);
