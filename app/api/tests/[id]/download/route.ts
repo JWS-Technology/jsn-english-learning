@@ -56,17 +56,33 @@ export async function GET(
       });
       doc.restoreGraphicsState();
 
-      // Footer
+      // --- FOOTER ---
+      // 1. Standard Info (Slate color)
       doc.setTextColor(100, 116, 139);
       doc.setFontSize(9);
       doc.setFont("times", "bold");
-      doc.text("Dr. S. Jerald Sagaya Nathan - 9843287913", 15, pageHeight - 15);
+      doc.text(
+        "Dr. S. Jerald Sagaya Nathan - +91 98432 87913",
+        15,
+        pageHeight - 20,
+      );
+
+      // Page Number (Right aligned)
       doc.text(
         `Page ${(doc as any).internal.getNumberOfPages()}`,
         pageWidth - 15,
         pageHeight - 15,
         { align: "right" },
       );
+
+      // 2. Clickable Links (Blue color)
+      doc.setTextColor(37, 99, 235); // Blue-600 to indicate they are links
+      doc.setFont("times", "normal");
+
+      // Website Link
+      doc.textWithLink("www.jsnenglishlearning.com", 15, pageHeight - 15, {
+        url: "https://www.jsnenglishlearning.com",
+      });
 
       // Header
       if (isFirstPage) {
@@ -151,14 +167,18 @@ export async function GET(
 
     // 4. Send the PDF file to the client
     const fileNameSuffix = withAnswers ? "Answer_Key" : "Question_Paper";
-    const fileName = `${fullTest.title.replace(/\s+/g, "_")}_${fileNameSuffix}.pdf`;
+
+    // ✅ THE FIX: Sanitize the title for the HTTP Header
+    const safeTitle = fullTest.title
+      .replace(/[^\x00-\x7F]/g, "") // Removes all non-ASCII characters (like smart quotes ’)
+      .replace(/\s+/g, "_"); // Replaces spaces with underscores
+
+    const fileName = `${safeTitle}_${fileNameSuffix}.pdf`;
 
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        // 'attachment' forces download on web, 'inline' opens in browser.
-        // For APIs serving apps, attachment is usually best.
         "Content-Disposition": `attachment; filename="${fileName}"`,
       },
     });
