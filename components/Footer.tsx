@@ -38,6 +38,8 @@ export default function Footer() {
                         <li><Link href="/tests">Online Tests</Link></li>
                         <li><Link href="/youtube">YouTube Channel</Link></li>
                         <li><Link href="/about">About Dr. Nathan</Link></li>
+                        <li><Link href="/privacy-policy">Privacy and Policy</Link></li>
+                        <li><Link href="/delete-account">Account Deletion</Link></li>
                         <li><Link href="/contact">Contact Us</Link></li>
                     </ul>
                 </div>
