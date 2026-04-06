@@ -7,7 +7,7 @@ import MaterialsHero from "@/components/materials/MaterialsHero";
 import MaterialCard from "@/components/materials/MaterialCard";
 
 export default function MaterialsPage() {
-    const [materials, setMaterials] = useState([]);
+    const [materials, setMaterials] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [search, setSearch] = useState("");
