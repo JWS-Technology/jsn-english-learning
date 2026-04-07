@@ -9,6 +9,9 @@ import AnnouncementsGrid from "@/components/homepage/AnnouncementsGrid";
 import StatsBar from "@/components/homepage/StatsBar";
 import Features from "@/components/homepage/Features";
 import FounderProfile from "@/components/homepage/FounderProfile";
+import SuccessWall from "@/components/homepage/SuccessWall";
+import SpotlightAnnouncements from "@/components/homepage/Spotlight";
+import TextTestimonials from "@/components/homepage/TestimonialSlider";
 
 export default function HomePage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -35,10 +38,11 @@ export default function HomePage() {
 
       {/* Grid of Announcements */}
       <AnnouncementsGrid announcements={announcements} />
-
       {/* High-level Stats */}
       <StatsBar />
-
+      <TextTestimonials />
+      <SpotlightAnnouncements />
+      <SuccessWall />
       {/* Why Choose Us Features */}
       <Features />
 

@@ -29,10 +29,10 @@ const NavbarMobile: React.FC<NavbarMobileProps> = ({ links, user, handleLogout }
     return (
         <nav
             ref={navRef}
-            className={`mx-auto rounded-[2rem] px-6 py-4 transition-all duration-500 z-50 ${scrolled
+            className={`mx-auto rounded-[2rem] px-6 py-6 transition-all duration-500 z-50 ${scrolled
                 ? "bg-[#0F172A]/90 backdrop-blur-md shadow-2xl scale-90 w-[90vw] border border-white/10"
                 : "bg-[#0F172A] w-[95vw]"
-                } ${open ? "rounded-3xl bg-[#0F172A]" : ""}`}
+                } ${open ? "rounded-3xl bg-[#0F172A] " : ""}`}
         >
             <div className="flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2">
@@ -48,7 +48,7 @@ const NavbarMobile: React.FC<NavbarMobileProps> = ({ links, user, handleLogout }
                 </button>
             </div>
 
-            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${open ? "max-h-[500px] opacity-100 mt-6" : "max-h-0 opacity-0"}`}>
+            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${open ? "max-h-175 opacity-100 mt-6" : "max-h-0 opacity-0"}`}>
                 <div className="flex flex-col space-y-4 pb-4">
                     {links.map((link) => (
                         <Link

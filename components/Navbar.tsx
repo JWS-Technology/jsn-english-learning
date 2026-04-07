@@ -12,6 +12,8 @@ const NAV_LINKS: NavLink[] = [
     { label: "Home", href: "/" },
     { label: "Study Materials", href: "/materials" },
     { label: "Online Tests", href: "/online-tests" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Gallery", href: "/gallery" },
     { label: "YouTube", href: "/youtube" },
     { label: "Contact", href: "/contact" },
 ];

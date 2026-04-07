@@ -1,7 +1,15 @@
 "use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, PlayCircle, Trophy, Users, GraduationCap, FileText, Star } from "lucide-react";
+import {
+    ArrowRight,
+    PlayCircle,
+    IndianRupee,
+    ClipboardList,
+    CalendarDays,
+    FileText,
+    Zap
+} from "lucide-react";
 
 export default function Hero() {
     return (
@@ -26,11 +34,6 @@ export default function Hero() {
                     transition={{ duration: 0.6 }}
                     className="text-center lg:text-left"
                 >
-                    {/* Badge for Trust */}
-                    {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs font-bold uppercase tracking-widest mb-6">
-                        <Star className="w-3 h-3 fill-orange-500" /> Tamil Nadu's #1 TRB Academy
-                    </div> */}
-
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.95] tracking-tighter">
                         Master Your <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600 italic font-serif">
@@ -58,44 +61,60 @@ export default function Hero() {
                             <PlayCircle className="w-5 h-5 text-orange-500" /> Video Lectures
                         </Link>
                     </div>
-
-                    {/* --- Mobile-Only Stats: Clean & Minimal --- */}
-                    {/* <div className="mt-12 flex lg:hidden items-center justify-center gap-8 border-t border-white/5 pt-8">
-                        <div className="text-center">
-                            <p className="text-2xl font-black text-white">95%</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Success</p>
-                        </div>
-                        <div className="w-px h-8 bg-white/10" />
-                        <div className="text-center">
-                            <p className="text-2xl font-black text-white">8k+</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Students</p>
-                        </div>
-                        <div className="w-px h-8 bg-white/10" />
-                        <div className="text-center">
-                            <p className="text-2xl font-black text-white">13+ </p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Years Exp</p>
-                        </div>
-                    </div> */}
                 </motion.div>
 
-                {/* --- Right Content: Desktop Only Bento Grid --- */}
+                {/* --- Right Content: Spotlight Bento Grid --- */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
                     className="hidden lg:grid grid-cols-2 gap-4 relative"
                 >
-                    <StatCard icon={<Trophy />} value="95%" label="Success Rate" light />
-                    <StatCard icon={<Users />} value="8k+" label="Aspirants" />
-                    <StatCard icon={<GraduationCap />} value="13+" label="Experience" />
+                    {/* 1. Fee Structure Box */}
+                    <div className="bg-white p-6 rounded-[2.5rem] shadow-2xl flex flex-col group cursor-default">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="bg-orange-100 p-3 rounded-2xl text-orange-600"><IndianRupee size={20} /></div>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">UG TRB 2026</span>
+                        </div>
+                        <p className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Fee Structure</p>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold border-b border-slate-50 pb-1">
+                                <span className="text-slate-500">Online Only</span>
+                                <span className="text-orange-600">₹7,999</span>
+                            </div>
+                            <div className="flex justify-between text-[10px] font-bold border-b border-slate-50 pb-1">
+                                <span className="text-slate-500">Class + Test</span>
+                                <span className="text-orange-600">₹8,999</span>
+                            </div>
+                            <div className="flex justify-between text-[10px] font-bold">
+                                <span className="text-slate-500">Test Series</span>
+                                <span className="text-orange-600">₹1,999</span>
+                            </div>
+                        </div>
+                    </div>
 
+                    {/* 2. Test Portions Box */}
+                    <SpotlightBox
+                        icon={<ClipboardList />}
+                        title="Test Portions"
+                        desc="Cumulative tests covering Chaucer to Post-Modernism. Weekly schedule updated."
+                    />
+
+                    {/* 3. Class Portions Box */}
+                    <SpotlightBox
+                        icon={<CalendarDays />}
+                        title="Class Portions"
+                        desc="Ongoing: Unit IX & X. Evening batches (6 PM - 8 PM). Batch B starting soon."
+                    />
+
+                    {/* 4. PDF Units Box (Original) */}
                     <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-orange-500/20 group cursor-default">
                         <FileText className="mb-4 w-8 h-8 opacity-80 group-hover:scale-110 transition-transform" />
                         <p className="text-2xl font-black leading-tight tracking-tighter">100+ PREMIUM <br />PDF UNITS</p>
                         <p className="text-xs mt-2 text-orange-100 font-medium">Updated for 2026 Cycle</p>
                     </div>
 
-                    {/* Background Glow for the Grid */}
+                    {/* Background Glow */}
                     <div className="absolute inset-0 bg-orange-500/20 blur-[100px] -z-10 rounded-full" />
                 </motion.div>
 
@@ -104,17 +123,16 @@ export default function Hero() {
     );
 }
 
-function StatCard({ icon, value, label, light = false }: { icon: any, value: string, label: string, light?: boolean }) {
+function SpotlightBox({ icon, title, desc }: { icon: any, title: string, desc: string }) {
     return (
-        <div className={`
-      ${light ? 'bg-white text-slate-900 shadow-2xl' : 'bg-white/5 text-white border border-white/10 backdrop-blur-md'} 
-      p-8 rounded-[2.5rem] flex flex-col justify-center items-center text-center hover:scale-[1.02] transition-all duration-300 cursor-default
-    `}>
-            <div className="text-orange-500 mb-4 bg-orange-500/5 p-3 rounded-2xl">
+        <div className="bg-white/5 text-white border border-white/10 backdrop-blur-md p-6 rounded-[2.5rem] flex flex-col hover:bg-white/10 transition-all duration-300 cursor-default">
+            <div className="text-orange-500 mb-4 bg-orange-500/10 w-fit p-3 rounded-2xl">
                 {icon}
             </div>
-            <p className="text-4xl font-black tracking-tighter">{value}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{label}</p>
+            <p className="text-xs font-black uppercase tracking-widest text-orange-400 mb-2">{title}</p>
+            <p className="text-[10px] font-medium text-slate-400 leading-relaxed line-clamp-3">
+                {desc}
+            </p>
         </div>
     );
 }

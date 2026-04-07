@@ -11,7 +11,9 @@ import {
     LogOut,
     ShieldCheck,
     Home,
-    Megaphone
+    Megaphone,
+    User2,
+    Image
 } from "lucide-react";
 
 const navItems = [
@@ -22,6 +24,8 @@ const navItems = [
     { name: "Study Materials", href: "/admin/materials", icon: BookOpen },
     { name: "Physical Orders", href: "/admin/orders", icon: Package },
     { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
+    { name: "Testimonials", href: "/admin/testimonials", icon: Users },
+    { name: "Gallery", href: "/admin/gallery", icon: Image },
 ];
 
 export default function AdminSidebar() {
