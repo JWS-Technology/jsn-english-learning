@@ -12,6 +12,7 @@ import FounderProfile from "@/components/homepage/FounderProfile";
 import SuccessWall from "@/components/homepage/SuccessWall";
 import SpotlightAnnouncements from "@/components/homepage/Spotlight";
 import TextTestimonials from "@/components/homepage/TestimonialSlider";
+import WelcomePoster from "@/components/homepage/WelcomePoster";
 
 export default function HomePage() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -32,6 +33,7 @@ export default function HomePage() {
     <main className="flex flex-col bg-white">
       {/* Hero & Sliding Marquee wrapper */}
       <div className="relative">
+        <WelcomePoster />
         <Hero />
         <AnnouncementMarquee announcements={announcements} />
       </div>

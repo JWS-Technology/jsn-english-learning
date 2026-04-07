@@ -20,7 +20,7 @@ export default function AnnouncementMarquee({ announcements }: { announcements: 
     if (!announcements.length) return null;
 
     return (
-        <div ref={containerRef} className="absolute bottom-5 left-0 w-full bg-orange-500/10 border-y border-orange-500/20 py-3 z-20 overflow-hidden">
+        <div ref={containerRef} className="absolute bottom-25 left-0 w-full bg-orange-500/10 border-y border-orange-500/20 py-3 z-20 overflow-hidden">
             <motion.div
                 ref={marqueeRef}
                 animate={{ x: [containerWidth, -width] }}
