@@ -52,6 +52,10 @@ export async function POST(req: Request) {
     const response = NextResponse.json({
       success: true,
       role: user.role,
+      user: {
+        id: user._id.toString(), // ✅ ADD THIS
+        email: user.email, // optional (useful later)
+      },
     });
 
     response.cookies.set({
