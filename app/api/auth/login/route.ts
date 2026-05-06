@@ -53,8 +53,8 @@ export async function POST(req: Request) {
       success: true,
       role: user.role,
       user: {
-        id: user._id.toString(), // ✅ ADD THIS
-        email: user.email, // optional (useful later)
+        id: user._id.toString(),
+        email: user.email,
       },
     });
 

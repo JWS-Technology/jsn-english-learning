@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CalendarDays, ClipboardCheck, BellRing } from "lucide-react";
+import { X, CalendarDays, ClipboardCheck, BellRing, Smartphone } from "lucide-react"; // Added Smartphone icon
 import axios from "axios";
 
 export default function WelcomePoster() {
@@ -51,7 +51,7 @@ export default function WelcomePoster() {
                         className="absolute inset-0 bg-slate-950/70 backdrop-blur-md cursor-zoom-out"
                     />
 
-                    {/* Main Poster Container - Added max-h and overflow for mobile safety */}
+                    {/* Main Poster Container */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -86,7 +86,7 @@ export default function WelcomePoster() {
                             </p>
                         </div>
 
-                        {/* Two-Column Grid - Scrollable on tiny screens */}
+                        {/* Two-Column Grid */}
                         <div className="p-4 sm:p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 bg-[#F8FAFC] overflow-y-auto">
 
                             {/* Class Box */}
@@ -100,7 +100,6 @@ export default function WelcomePoster() {
                                     </div>
                                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-xs text-slate-400">Class Portion</h3>
                                 </div>
-                                {/* Responsive text size to prevent overflow */}
                                 <p className="text-base sm:text-lg md:text-2xl font-black text-slate-900 mb-6 flex-1 leading-snug md:leading-tight tracking-tight">
                                     {schedule.classUnit}
                                 </p>
@@ -126,7 +125,6 @@ export default function WelcomePoster() {
                                     </div>
                                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-xs text-slate-400">Upcoming Test</h3>
                                 </div>
-                                {/* Responsive text size */}
                                 <p className="text-base sm:text-lg md:text-2xl font-black text-slate-900 mb-6 flex-1 leading-snug md:leading-tight tracking-tight">
                                     {schedule.testUnit}
                                 </p>
@@ -140,8 +138,20 @@ export default function WelcomePoster() {
 
                         </div>
 
-                        {/* Footer */}
-                        <div className="p-4 sm:p-6 md:px-10 md:pb-10 pt-0 bg-[#F8FAFC] shrink-0 border-t border-slate-100 md:border-none">
+                        {/* Footer / Actions */}
+                        <div className="p-4 sm:p-6 md:px-10 md:pb-10 pt-0 bg-[#F8FAFC] shrink-0 border-t border-slate-100 md:border-none flex flex-col gap-3 md:gap-4">
+                            {/* App Download Link */}
+                            <a
+                                href="https://play.google.com/store/apps/details?id=com.jsnenglish.jsn_english_app"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-3 md:py-4 bg-blue-50 text-blue-700 rounded-xl md:rounded-2xl font-bold text-[11px] md:text-sm hover:bg-blue-100 transition-all flex justify-center items-center gap-2 border border-blue-100"
+                            >
+                                <Smartphone className="w-4 h-4 md:w-5 md:h-5" />
+                                Download our Android App for the Best Experience
+                            </a>
+
+                            {/* Enter Portal Button */}
                             <button
                                 onClick={closePoster}
                                 className="w-full py-4 md:py-6 bg-[#0F172A] text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs hover:bg-blue-600 transition-all shadow-lg active:scale-95 flex justify-center items-center gap-2 md:gap-3"
