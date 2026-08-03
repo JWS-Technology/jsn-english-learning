@@ -3,8 +3,6 @@
 import { useState, useRef } from "react";
 import axios from "axios";
 import {
-    Upload,
-    FileText,
     CheckCircle2,
     AlertCircle,
     Loader2,
@@ -13,16 +11,12 @@ import {
     Book,
     Clock,
     ShieldCheck,
-    FileUp,
     Zap,
-    Download
+    Download,
+    FileSpreadsheet
 } from "lucide-react";
-// ✅ IMPORT THE DOCX LIBRARIES
-import {
-    Document, Packer, Paragraph, TextRun, HeadingLevel,
-    Table, TableRow, TableCell, WidthType
-} from "docx";
-import { saveAs } from "file-saver";
+// ✅ IMPORT THE EXCEL LIBRARY
+import * as XLSX from "xlsx";
 
 export default function AdminTestUploadPage() {
     const [form, setForm] = useState({
@@ -40,90 +34,43 @@ export default function AdminTestUploadPage() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // ✅ FIX: Generates Word Tables exactly formatted for the backend parser
-    const generateAndDownloadTemplate = async () => {
-
-        // Helper function to create a standardized question table
-        const createQuestionTable = (questionText: string, options: { text: string, grade: string }[]) => {
-            return new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                rows: [
-                    // Row 0: The Question
-                    new TableRow({
-                        children: [
-                            new TableCell({
-                                children: [new Paragraph({ text: questionText, style: "Strong" })],
-                                columnSpan: 3,
-                            }),
-                        ],
-                    }),
-                    // Row 1: The Header Row (Required by backend regex)
-                    new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph({ text: "ID", style: "Strong" })] }),
-                            new TableCell({ children: [new Paragraph({ text: "Answers", style: "Strong" })] }),
-                            new TableCell({ children: [new Paragraph({ text: "Grade", style: "Strong" })] }),
-                        ],
-                    }),
-                    // Rows 2+: The Options
-                    ...options.map(opt => new TableRow({
-                        children: [
-                            new TableCell({ children: [new Paragraph("")] }), // Empty ID column
-                            new TableCell({ children: [new Paragraph(opt.text)] }), // The answer text
-                            new TableCell({ children: [new Paragraph(opt.grade)] }), // The grade (100 = correct)
-                        ],
-                    }))
-                ]
-            });
-        };
-
-        const doc = new Document({
-            sections: [
-                {
-                    properties: {},
-                    children: [
-                        new Paragraph({
-                            text: "JSN English Learning - Standard CBT Upload Template",
-                            heading: HeadingLevel.HEADING_2,
-                            spacing: { after: 200 },
-                        }),
-                        new Paragraph({
-                            text: "Instructions: Copy the tables below for each question. Place the question text in the top row. Put your answers in the 'Answers' column. Type '100' in the 'Grade' column next to the correct answer. Keep other grades blank or '0'.",
-                            spacing: { after: 400 },
-                        }),
-
-                        // --- Table 1 ---
-                        createQuestionTable("Who is the author of the poem 'Kubla Khan'?", [
-                            { text: "A) William Wordsworth", grade: "0" },
-                            { text: "B) Samuel Taylor Coleridge", grade: "100" },
-                            { text: "C) John Keats", grade: "0" },
-                            { text: "D) Lord Byron", grade: "0" },
-                        ]),
-                        new Paragraph({ text: "", spacing: { after: 400 } }), // Blank spacing between tables
-
-                        // --- Table 2 ---
-                        createQuestionTable("In which year was the Lyrical Ballads published?", [
-                            { text: "A) 1798", grade: "100" },
-                            { text: "B) 1800", grade: "0" },
-                            { text: "C) 1789", grade: "0" },
-                            { text: "D) 1802", grade: "0" },
-                        ]),
-                        new Paragraph({ text: "", spacing: { after: 400 } }),
-
-                        // --- Table 3 ---
-                        createQuestionTable("Which of the following is an element of a Shakespearean sonnet?", [
-                            { text: "A) ABBA ABBA CDE CDE rhyme scheme", grade: "0" },
-                            { text: "B) Written in dactylic hexameter", grade: "0" },
-                            { text: "C) Ends with a rhyming couplet", grade: "100" },
-                            { text: "D) Contains exactly 12 lines", grade: "0" },
-                        ]),
-                    ],
-                },
+    // ✅ Generates an Excel template with Question, Option A-D and Correct Answer columns
+    const generateAndDownloadTemplate = () => {
+        const templateRows: (string | number)[][] = [
+            ["Question", "Option A", "Option B", "Option C", "Option D", "Correct Answer"],
+            [
+                "Who is the author of the poem 'Kubla Khan'?",
+                "William Wordsworth",
+                "Samuel Taylor Coleridge",
+                "John Keats",
+                "Lord Byron",
+                "B) Samuel Taylor Coleridge",
             ],
-        });
+            [
+                "In which year was the Lyrical Ballads published?",
+                "1798",
+                "1800",
+                "1789",
+                "1802",
+                "A) 1798",
+            ],
+            [
+                "Which of the following is an element of a Shakespearean sonnet?",
+                "ABBA ABBA CDE CDE rhyme scheme",
+                "Written in dactylic hexameter",
+                "Ends with a rhyming couplet",
+                "Contains exactly 12 lines",
+                "C) Ends with a rhyming couplet",
+            ],
+        ];
 
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, "JSN_Test_Template.docx");
+        const ws = XLSX.utils.aoa_to_sheet(templateRows);
+        ws["!cols"] = [{ wch: 60 }, { wch: 40 }, { wch: 40 }, { wch: 40 }, { wch: 40 }, { wch: 40 }];
+        ws["!autofilter"] = { ref: `A1:F${templateRows.length}` };
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Questions");
+        XLSX.writeFile(wb, "JSN_Test_Template.xlsx");
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -132,7 +79,7 @@ export default function AdminTestUploadPage() {
         setSuccess("");
 
         if (!file) {
-            setError("Please select a Word document (.docx) to proceed.");
+            setError("Please select an Excel (.xlsx) or CSV file to proceed.");
             return;
         }
 
@@ -270,7 +217,7 @@ export default function AdminTestUploadPage() {
                     {/* File Upload Container with GENERATE Template Button */}
                     <div className="space-y-2">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 ml-1">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Test Template (Word .docx)</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Test Template (Excel / CSV)</label>
                             <button
                                 type="button"
                                 onClick={generateAndDownloadTemplate}
@@ -289,14 +236,14 @@ export default function AdminTestUploadPage() {
                                 type="file"
                                 ref={fileInputRef}
                                 className="hidden"
-                                accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                             />
 
                             {file ? (
                                 <div className="flex items-center gap-4 animate-in fade-in zoom-in-95">
                                     <div className="bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-200">
-                                        <FileText className="text-white w-7 h-7" />
+                                        <FileSpreadsheet className="text-white w-7 h-7" />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-sm font-black text-[#0F172A] truncate max-w-[240px]">{file.name}</p>
@@ -310,11 +257,11 @@ export default function AdminTestUploadPage() {
                             ) : (
                                 <>
                                     <div className="bg-slate-50 p-4 rounded-2xl mb-4 group-hover:scale-110 group-hover:bg-white transition-all duration-500 shadow-sm border border-slate-100">
-                                        <FileUp className="w-7 h-7 text-blue-500" />
+                                        <FileSpreadsheet className="w-7 h-7 text-blue-500" />
                                     </div>
-                                    <p className="text-sm font-black text-[#0F172A]">Drop QUIZ Template here</p>
+                                    <p className="text-sm font-black text-[#0F172A]">Drop EXCEL / CSV Template here</p>
                                     <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest text-center">
-                                        Ensure format matches: Question, Answers, Grade (100 = Correct)
+                                        Columns required: Question, Option A-D, Correct Answer
                                     </p>
                                 </>
                             )}
@@ -333,7 +280,7 @@ export default function AdminTestUploadPage() {
                         {loading ? (
                             <span className="flex items-center justify-center gap-3">
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                Parsing Document & Deploying...
+                                Parsing Spreadsheet & Deploying...
                             </span>
                         ) : (
                             "Upload Test"

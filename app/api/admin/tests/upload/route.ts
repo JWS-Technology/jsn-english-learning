@@ -1,7 +1,7 @@
 // app/api/admin/tests/upload/route.ts
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-import mammoth from "mammoth";
+import * as XLSX from "xlsx";
 import Test from "@/models/test.model";
 
 const connectDB = async () => {
@@ -32,25 +32,18 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Convert to HTML to preserve Word Tables
-    const result = await mammoth.convertToHtml({ buffer });
-    const htmlContent = result.value;
-
-    // Parse the HTML tables
-    let questions = parseQuizFromHtmlTable(htmlContent);
-
-    // Fallback if no tables found
-    if (questions.length === 0) {
-      const rawTextResult = await mammoth.extractRawText({ buffer });
-      questions = parseFallbackText(rawTextResult.value);
-    }
+    // Parse the workbook (handles .xlsx, .xls and .csv)
+    const workbook = XLSX.read(buffer, {
+      type: "buffer",
+      cellDates: false,
+    });
+    const questions = parseWorkbookToQuestions(workbook);
 
     if (questions.length === 0) {
-      console.log("Extracted HTML preview:", htmlContent.substring(0, 500));
       return NextResponse.json(
         {
           message:
-            "Could not find any valid questions in the document. Ensure it matches the template.",
+            "Could not find any valid questions in the file. Ensure it has Question, Option A-D and Correct Answer columns.",
         },
         { status: 400 },
       );
@@ -84,150 +77,127 @@ export async function POST(request: Request) {
   }
 }
 
-// --- HELPER 1: THE TABLE PARSER (UPDATED) ---
-function parseQuizFromHtmlTable(html: string) {
+// --- HELPER: EXCEL / CSV PARSER ---
+// Expected columns: Question, Option A, Option B, Option C, Option D, Correct Answer
+// (also accepts a single "Options"/"Choices" column split by "|" or ";").
+// "Correct Answer" can be the option text, a letter (A/B/C/D) or a 1-based index.
+function parseWorkbookToQuestions(workbook: XLSX.WorkBook): any[] {
   const questions: any[] = [];
 
-  // ✅ FIX 1: Removed 's' flag, changed (.*?) to ([\s\S]*?)
-  const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
-  let tableMatch;
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const rows: string[][] = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      raw: false,
+      defval: "",
+    });
 
-  while ((tableMatch = tableRegex.exec(html)) !== null) {
-    const tableHtml = tableMatch[1];
-    const rows: string[][] = [];
+    const headerIndex = rows.findIndex((row) => {
+      const header = row.map((c) => c.toString().trim().toLowerCase());
+      return (
+        header.some((c) => c.includes("question")) &&
+        header.some((c) => c.includes("answer"))
+      );
+    });
 
-    // ✅ FIX 2: Removed 's' flag, changed (.*?) to ([\s\S]*?)
-    const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-    let rowMatch;
+    if (headerIndex === -1) continue;
 
-    // Extract all rows and cells
-    while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
-      const rowHtml = rowMatch[1];
-      const cells: string[] = [];
+    const header = rows[headerIndex].map((c) => c.toString().trim());
+    const qCol = header.findIndex((h) => h.toLowerCase().includes("question"));
+    const aCol = header.findIndex((h) => h.toLowerCase().includes("answer"));
 
-      // ✅ FIX 3: Removed 's' flag, changed (.*?) to ([\s\S]*?)
-      const cellRegex = /<(td|th)[^>]*>([\s\S]*?)<\/\1>/gi;
-      let cellMatch;
-
-      while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {
-        // cellMatch[2] contains the inner content of the td/th
-        let cellText = cellMatch[2].replace(/<[^>]+>/g, " ").trim();
-        cellText = cellText
-          .replace(/&nbsp;/g, " ")
-          .replace(/&amp;/g, "&")
-          .trim();
-
-        // Clean up extra spaces caused by stripped tags
-        cellText = cellText.replace(/\s+/g, " ");
-        cells.push(cellText);
+    // Collect option columns (e.g. "Option A", "Option B", ...)
+    const optCols: number[] = [];
+    const optionsCol = header.findIndex((h) => {
+      const lower = h.toLowerCase();
+      return lower === "options" || lower === "choices";
+    });
+    header.forEach((h, i) => {
+      const lower = h.toLowerCase();
+      if (/^option\s+[a-d]$/.test(lower) || /^opt[a-d]$/.test(lower)) {
+        optCols.push(i);
       }
-      if (cells.length > 0) rows.push(cells);
-    }
+    });
 
-    // Find the header row (looking for "Answers" and "Grade")
-    let headerRowIndex = -1;
-    for (let r = 0; r < rows.length; r++) {
-      const rowString = rows[r].join(" ").toLowerCase();
-      if (rowString.includes("answers") && rowString.includes("grade")) {
-        headerRowIndex = r;
-        break;
-      }
-    }
+    for (let r = headerIndex + 1; r < rows.length; r++) {
+      const row = rows[r];
+      const getCell = (i: number) => (row[i] ? row[i].toString().trim() : "");
 
-    // If we found a valid structure inside this table
-    if (headerRowIndex !== -1) {
-      // Based on your template, the Question Text is in Row 1, Column 1
-      let questionText = rows[0][0];
+      const questionText = qCol >= 0 ? getCell(qCol) : "";
+      if (!questionText) continue;
 
-      const options = [];
-      let correctAnswer = 0;
+      let options: string[] = [];
 
-      // Extract the options below the header
-      for (let r = headerRowIndex + 1; r < rows.length; r++) {
-        const row = rows[r];
-
-        if (row.length >= 2) {
-          let answerText = "";
-          let gradeText = "";
-
-          // Handle varying column counts (Word sometimes merges empty cells)
-          if (row.length >= 4) {
-            answerText = row[1]; // Answers are usually in the 2nd column
-            gradeText = row[row.length - 1]; // Grade is usually in the last column
-          } else if (row.length === 3) {
-            answerText = row[1];
-            gradeText = row[2];
-          } else {
-            answerText = row[0];
-            gradeText = row[row.length - 1];
-          }
-
-          // Clean up numbering (e.g., if Word exported "A row in a relational table" next to a list item)
-          answerText = answerText.replace(/^#\s*/, "").trim();
-
-          const grade = parseInt(gradeText, 10);
-
-          if (answerText && !isNaN(grade)) {
-            options.push(answerText);
-            if (grade === 100) {
-              correctAnswer = options.length - 1; // Mark index as correct
-            }
-          }
+      if (optCols.length > 0) {
+        // Option columns mode
+        for (const i of optCols) {
+          const opt = getCell(i);
+          if (opt) options.push(opt);
         }
+      } else if (optionsCol !== -1) {
+        // Single "Options" column mode, split by | or ;
+        const raw = getCell(optionsCol);
+        options = raw
+          .split(/[|;]/)
+          .map((o) => o.trim())
+          .filter((o) => o.length > 0);
       }
 
-      if (questionText && options.length > 0) {
-        questions.push({ questionText, options, correctAnswer });
-      }
+      if (options.length === 0) continue;
+
+      const answerRaw = aCol >= 0 ? getCell(aCol) : "";
+      const correctAnswer = findAnswerIndex(answerRaw, options);
+
+      questions.push({ questionText, options, correctAnswer });
     }
   }
 
   return questions;
 }
 
-// --- HELPER 2: COMMA-SEPARATED PARSER (Fallback) ---
-function parseFallbackText(text: string) {
-  const lines = text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  const questions: any[] = [];
-  let currentQuestion: any = null;
-  let readingAnswers = false;
+function findAnswerIndex(answerRaw: string, options: string[]): number {
+  const answer = answerRaw.trim();
 
-  for (const line of lines) {
-    if (line.includes(",MC") || (line.includes("?") && !readingAnswers)) {
-      if (currentQuestion && currentQuestion.options.length > 0) {
-        questions.push(currentQuestion);
-      }
-      let qText = line.replace(",MC", "").trim().replace(/^"|"$/g, "");
-      currentQuestion = { questionText: qText, options: [], correctAnswer: 0 };
-      readingAnswers = false;
-    } else if (line.includes("Answers") && line.includes("Grade")) {
-      readingAnswers = true;
-    } else if (readingAnswers && currentQuestion) {
-      const parts = line.split(",");
-      if (parts.length >= 2) {
-        const gradeStr = parts[parts.length - 1].trim();
-        const grade = parseInt(gradeStr, 10);
+  if (!answer) return 0;
 
-        if (!isNaN(grade)) {
-          let answerText =
-            parts.length >= 4 ? parts[1].trim() : parts[0].trim();
-          answerText = answerText.replace(/^"|"$/g, "");
+  // 1) Exact match against one of the options (ignoring case)
+  const exactIndex = options.findIndex(
+    (opt) => opt.toLowerCase() === answer.toLowerCase(),
+  );
+  if (exactIndex !== -1) return exactIndex;
 
-          if (answerText) {
-            currentQuestion.options.push(answerText);
-            if (grade === 100)
-              currentQuestion.correctAnswer =
-                currentQuestion.options.length - 1;
-          }
-        }
+  // 2) Letter form: "A", "a", "A)", "A."
+  const letterMatch = answer.match(/^([a-dA-D])[).:]?\s*$/);
+  if (letterMatch) {
+    const letterIndex = letterMatch[1].toUpperCase().charCodeAt(0) - 65;
+    if (letterIndex >= 0 && letterIndex < options.length) return letterIndex;
+  }
+
+  // 3) Letter-prefixed text form: "B) Samuel Taylor Coleridge", "B. text", "B - text"
+  const prefixMatch = answer.match(/^([a-dA-D])[).:\-]?\s+(.+)$/);
+  if (prefixMatch) {
+    const letterIndex = prefixMatch[1].toUpperCase().charCodeAt(0) - 65;
+    const remainder = prefixMatch[2].trim().toLowerCase();
+    if (letterIndex >= 0 && letterIndex < options.length) {
+      const opt = options[letterIndex].toLowerCase();
+      if (opt === remainder || opt.startsWith(remainder) || remainder.startsWith(opt)) {
+        return letterIndex;
       }
     }
   }
 
-  if (currentQuestion && currentQuestion.options.length > 0)
-    questions.push(currentQuestion);
-  return questions;
+  // 4) Partial text match against one of the options
+  const startsWithIndex = options.findIndex((opt) =>
+    opt.toLowerCase().startsWith(answer.toLowerCase()),
+  );
+  if (startsWithIndex !== -1) return startsWithIndex;
+
+  // 5) 1-based index form: "1", "2", "3", "4"
+  const numMatch = answer.match(/^\s*(\d+)\s*$/);
+  if (numMatch) {
+    const idx = parseInt(numMatch[1], 10) - 1;
+    if (idx >= 0 && idx < options.length) return idx;
+  }
+
+  return 0;
 }
